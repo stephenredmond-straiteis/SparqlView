@@ -1,11 +1,11 @@
 $(function() {
 
 	var spriteHome = 'spriteHome';
-	if ($.jStorage.get('selectedLanguage') == 'en') {
+	if (lodliveStore.get('selectedLanguage') == 'en') {
 		spriteHome = 'spriteHomeEn';
-	} else if ($.jStorage.get('selectedLanguage') == 'fr') {
+	} else if (lodliveStore.get('selectedLanguage') == 'fr') {
 		spriteHome = 'spriteHomeFr';
-	} else if ($.jStorage.get('selectedLanguage') == 'gl') {
+	} else if (lodliveStore.get('selectedLanguage') == 'gl') {
 		spriteHome = 'spriteHomeEn';
 	}
 
@@ -32,8 +32,8 @@ $(function() {
 		$(".paginator").remove();
 		$("#footer").remove();
 		$("#lang").remove();
-		$('body').append('<div id="aSpace"></div>');
-		var res = $.trim(loca.substring(loca.indexOf("?") + 1));
+		$('body').append('<div id="aSpace" role="application" aria-label="SPARQL graph visualization"></div>');
+		var res = loca.substring(loca.indexOf("?") + 1).trim();
 		if (hash) res += hash;
 		res = res.replace(/%2F/g, '/');
 		res = res.replace(/%3A/g, ':');
@@ -41,12 +41,18 @@ $(function() {
 		$("#aSpace").lodlive('init', res);
 	} else {
 		var boxesLength = 0;
-		$.each($.jStorage.get('profile').connection, function(key, value) {
+		$.each(lodliveStore.get('profile').connection, function(key, value) {
 			boxesLength++;
 		});
 		var selBox = (boxesLength + 1) * 310;
 		var pag = (selBox / 930 + "").indexOf(".") > 0 ? parseInt(selBox / 930 + "".replace(/\.[0-9]*/, '')) + 1 : selBox / 930;
 		$('#boxesCont').width((pag) * 930);
+		$('#nextPage,#prevPage').on('keydown', function(e) {
+			if (e.key === 'Enter' || e.key === ' ') {
+				e.preventDefault();
+				$(this).click();
+			}
+		});
 		$('#nextPage,#prevPage').click(function() {
 			var boxes = $('#boxesCont').not(':animated');
 			var next = $(this).attr("id") == 'nextPage';
@@ -84,14 +90,14 @@ $(function() {
 				});
 			}
 		});
-		var formTemplate = '<form><div class="select"><span>' + lang('choose') + '</span><span class="' + spriteHome + ' arrow"></span></div><div class="input"><input type="text" name="startFrom" value="" readonly="readonly"/></div></form>';
+		var formTemplate = '<form><div class="select" role="button" tabindex="0" aria-label="' + lang('choose') + '"><span>' + lang('choose') + '</span><span class="' + spriteHome + ' arrow"></span></div><div class="input"><input type="text" name="startFrom" value="" readonly="readonly"/></div></form>';
 
-		$.each($.jStorage.get('profile').connection, function(key, value) {
+		$.each(lodliveStore.get('profile').connection, function(key, value) {
 			var examples = value.examples;
 			// index++;
 			var aBox = $('<div class="startBox ' + spriteHome + '" rel="' + key + '"><h1><span>' + key.replace(/,.*/g, '').replace(/http:\/\//gi, '') + '</span><span class="' + spriteHome + ' info"></span></h1></div>');
 			$('#startPanel').children('#boxes').children('#boxesCont').append(aBox);
-			var descr = value.description[$.jStorage.get('selectedLanguage')];
+			var descr = value.description[lodliveStore.get('selectedLanguage')];
 			if (!descr) {
 				descr = value.description['en'];
 			}
@@ -114,10 +120,10 @@ $(function() {
 			descrBox.click(function() {
 				descrBox.fadeOut('fast');
 			});
-			form.bind('submit', function() {
+			form.on('submit', function() {
 				var value = $(this).find('input[name=startFrom]').val();
 				if (value != '') {
-					document.location = '?' + $.trim(value);
+					document.location = '?' + value.trim();
 				} else {
 					myAlert(lang('impostaUnaURI'));
 				}
@@ -167,8 +173,7 @@ $(function() {
 								cerca.find('div.select').click(function() {
 									if ($(this).data('show')) {
 
-										$('.slimScrollDiv', cerca).remove();
-										// $('div.selectionList', cerca).remove();
+										$('.selectionList', cerca).remove();
 
 										$(this).data('show', false);
 									} else {
@@ -204,22 +209,16 @@ $(function() {
 												x : -10
 											});
 										});
-										$('.slimScrollDiv', cerca).remove();
 										jClasses.css({
-											display : 'block'
-										});
-										jClasses.slimScroll({
-											height : 8 * 20,
-											width : 260,
-											color : '#000'
-										});
-										$('.slimScrollDiv', cerca).css({
-											position : 'absolute',
 											display : 'block',
+											maxHeight : (8 * 20) + 'px',
+											width : '260px',
+											overflowY : 'auto',
+											position : 'absolute',
 											left : ele2.position().left,
 											top : ele2.position().top + 60
 										});
-										$('.slimScrollDiv', cerca).hover(function() {
+										jClasses.hover(function() {
 										}, function() {
 											ele2.click();
 										});
@@ -261,7 +260,10 @@ $(function() {
 					});
 				}
 			});
-			var invia = $('<div class="inviaForm"></div>');
+			var invia = $('<div class="inviaForm" role="button" tabindex="0" aria-label="Submit"></div>');
+			invia.on('keydown', function(e) {
+				if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $(this).click(); }
+			});
 			invia.click(function() {
 				form.submit();
 			});
@@ -297,7 +299,7 @@ $(function() {
 		});
 
 	}
-	if (!$.support.canvas) {
+	if (!document.createElement('canvas').getContext) {
 		myAlert(lang('noIe'));
 	}
 	function showDescrBox(aBox, descrBox) {
@@ -318,7 +320,10 @@ $(function() {
 	}
 
 	function addSubmit(form) {
-		var invia = $('<div class="inviaForm"></div>');
+		var invia = $('<div class="inviaForm" role="button" tabindex="0" aria-label="Submit"></div>');
+		invia.on('keydown', function(e) {
+			if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $(this).click(); }
+		});
 		invia.click(function() {
 			form.submit();
 		});
@@ -332,10 +337,10 @@ $(function() {
 				x : -10
 			});
 		});
-		form.bind('submit', function() {
+		form.on('submit', function() {
 			var value = $(this).find('*[name=startFrom]').val();
 			if (value != '') {
-				document.location = '?' + $.trim(value);
+				document.location = '?' + value.trim();
 			} else {
 				myAlert(lang('impostaUnaURI'));
 			}
@@ -371,13 +376,13 @@ $(function() {
 		aBox.find('div.select').click(function() {
 			if ($(this).data('show')) {
 				$(this).data('show', false);
-				$('.slimScrollDiv', form).remove();
+				$('.selectionList', form).remove();
 			} else {
 				$(this).data('show', true);
 				var ele = $(this);
 				var jEndpoints = $('<div class="selectionList"></div>');
 
-				$.each($.jStorage.get('profile').connection, function(key, value) {
+				$.each(lodliveStore.get('profile').connection, function(key, value) {
 					jEndpoints.append('<div class="selectEle" rel="' + key + '"><span>' + key.replace(/,.*/g, '').replace(/http:\/\//gi, '') + '</span></div>');
 				});
 
@@ -391,30 +396,24 @@ $(function() {
 					var selBox = $("div[rel='" + label + "'].startBox:first").position().left + 310;
 					var pag = (selBox / 930 + "").indexOf(".") > 0 ? parseInt(selBox / 930 + "".replace(/\.[0-9]*/, '')) + 1 : selBox / 930;
 					for (var a = 0; a < pag - 1; a++) {
-						$.doTimeout(205 * a, function() {
+						setTimeout(function() {
 							nextSpeed = 0;
 							fadeSpeed = 0;
 							$("#nextPage").click();
-						});
+						}, 205 * a);
 					}
 				});
-				$('.slimScrollDiv', form).remove();
 				jEndpoints.css({
-					display : 'block'
-				});
-				jEndpoints.slimScroll({
-					height : 5 * 20,
-					width : 200,
-					color : '#000'
-				});
-				$('.slimScrollDiv', form).css({
-					position : 'absolute',
 					display : 'block',
+					maxHeight : (5 * 20) + 'px',
+					width : '200px',
+					overflowY : 'auto',
+					position : 'absolute',
 					zIndex : '9999',
 					left : ele.position().left,
 					top : ele.position().top + 280
 				});
-				$('.slimScrollDiv', form).hover(function() {
+				jEndpoints.hover(function() {
 				}, function() {
 					aBox.find('div.select').click();
 				});
@@ -444,7 +443,6 @@ $(function() {
 				var ele = $(this);
 				var jEndpoints = $('<div class="selectionList"></div>');
 				jEndpoints.append('<div class="selectEle" rel="dbpedia"><span>dbpedia.org</span></div>');
-				jEndpoints.append('<div class="selectEle" rel="freebase"><span>freebase.com</span></div>');
 				jEndpoints.hover(function() {
 				}, function() {
 					ele.click();
@@ -460,8 +458,8 @@ $(function() {
 					ele.click();
 					var label = $(this).attr('rel');
 					var ele2 = form.find('input[name=classFrom]');
-					ele2.unbind('focus');
-					ele2.unbind('keyup');
+					ele2.off('focus');
+					ele2.off('keyup');
 					ele2.val('').removeAttr('readonly').css({
 						background : '#fff',
 						color : '#975E1C'
@@ -479,7 +477,7 @@ $(function() {
 							}, 250);
 						}
 					});
-					ele2.focus(function() {
+					ele2.on('focus', function() {
 						form.find('.selectionList').remove();
 						invia2.click();
 					});
@@ -529,9 +527,6 @@ $(function() {
 							x : -10
 						});
 					});
-					/*
-					 * form.parent().setBackgroundPosition({ y : -10 });
-					 */
 					form.children('div.select').children('span:first').text($(this).find('span').text());
 				});
 
@@ -544,15 +539,13 @@ $(function() {
 
 	var connection = null;
 	function findConcept(type, value, callback, onAbort) {
-		try {
+		if (connection) {
 			connection.abort();
-			// onAbort();
-		} catch (e) {
 		}
 		var result = [];
 		if (type == 'dbpedia') {
 			connection = $.ajax({
-				url : 'http://lookup.dbpedia.org/api/search.asmx/PrefixSearch?QueryClass=&MaxHits=20&QueryString=' + value,
+				url : 'https://lookup.dbpedia.org/api/search.asmx/PrefixSearch?QueryClass=&MaxHits=20&QueryString=' + value,
 				async : true,
 				success : function(data) {
 					var xml = $(data);
@@ -570,27 +563,6 @@ $(function() {
 				complete : function(a, b) {
 					if (b == 'error' || b == 'parsererror' || b == 'timeout') {
 						myAlert(lang('enpointNotAvailableOrSLow') + "<br />https://lookup.dbpedia.org " + "(" + b + ")");
-						onAbort();
-					}
-				}
-			});
-		} else if (type == 'freebase') {
-			connection = $.ajax({
-				url : 'https://www.googleapis.com/freebase/v1/search?query=' + value + '&mql_output={"id":null,"name":null}&lang=en&key=AIzaSyBtTcMfVJVhjmhh_MdzeBCnuIC4J0WzPXQ',
-				async : true,
-				success : function(json) {
-					for (var int = 0; int < json.result.length; int++) {
-						var row = json.result[int];
-						result.push({
-							uri : 'http://rdf.freebase.com/ns/' + row.id.replace(/^\//, '').replace(/\//g, '.'),
-							label : row.name ? row.name : row.id
-						});
-						callback();
-					}
-				},
-				complete : function(a, b) {
-					if (b == 'error' || b == 'parsererror' || b == 'timeout') {
-						myAlert(lang('enpointNotAvailableOrSLow') + "<br />https://www.googleapis.com/freebase " + "(" + b + ")");
 						onAbort();
 					}
 				}

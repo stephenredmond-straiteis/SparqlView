@@ -11,8 +11,8 @@
  *
  */
 
-var debugOn = false;
 (function($, lodLiveProfile) {
+	var debugOn = false;
 	$.jsonp.setup({
 		cache : true,
 		callbackParameter : 'callback',
@@ -22,28 +22,37 @@ var debugOn = false;
 	});
 	var globalInfoPanelMap = {};
 	var globalInnerPageMap = {};
+	var leafletMap = null;
+	var leafletMarkers = [];
 	var context;
+	var start;
+	function makeKeyboardAccessible(element) {
+		element.attr('tabindex', '0');
+		element.on('keydown', function(e) {
+			if (e.key === 'Enter' || e.key === ' ') {
+				e.preventDefault();
+				$(this).click();
+			}
+		});
+	}
 	var methods = {
 		init : function(firstUri) {
 			context = this;
 			context.append('<div id="lodlogo" class="sprite"></div>');
 			// inizializzo il contenitore delle variabili di ambiente
-			var storeIdsCleaner = $.jStorage.index();
+			var storeIdsCleaner = lodliveStore.index();
 			for (var int = 0; int < storeIdsCleaner.length; int++) {
 				if (storeIdsCleaner[int].indexOf("storeIds-") == 0) {
-					$.jStorage.deleteKey(storeIdsCleaner[int]);
+					lodliveStore.deleteKey(storeIdsCleaner[int]);
 				}
 			}
-			$.jStorage.set('imagesMap', {});
-			$.jStorage.set('mapsMap', {});
-			$.jStorage.set('infoPanelMap', {});
-
-			// $.jStorage.set('storeIds',{});
-			// template della query
+			lodliveStore.set('imagesMap', {});
+			lodliveStore.set('mapsMap', {});
+			lodliveStore.set('infoPanelMap', {});
 
 			// creo il primo box, lo aggiungo al documento e lo posiziono
 			// orizzontalmente nel centro
-			var firstBox = $($.jStorage.get('boxTemplate'));
+			var firstBox = $(lodliveStore.get('boxTemplate'));
 			methods.centerBox(firstBox);
 			context.append(firstBox);
 			firstBox.attr("id", MD5(firstUri));
@@ -53,14 +62,10 @@ var debugOn = false;
 			});
 
 			// inizializzo la mappa delle classi
-			$.jStorage.set('classMap', {
+			lodliveStore.set('classMap', {
 				// randomize first color
 				counter : Math.floor(Math.random() * 13) + 1
 			});
-
-			// imposto le dimensioni dell'area di lavoro
-			// context.height($(document).height());
-			// context.width($(document).width());
 
 			// attivo le funzioni per il drag
 			methods.renewDrag(context.children('.boxWrapper'));
@@ -69,19 +74,16 @@ var debugOn = false;
 			methods.openDoc(firstUri, firstBox);
 
 			methods.controlPanel('init');
-			// methods.controlPanel('move');
 			methods.msg('', 'init');
-			// methods.msg('', 'move');
 
-			$(window).bind('scroll', function() {
+			$(window).on('scroll', function() {
 				methods.docInfo(null, 'move');
 				methods.controlPanel('move');
 			});
-			$(window).bind('resize', function() {
+			$(window).on('resize', function() {
 				methods.docInfo('', 'close');
 				$('#controlPanel').remove();
 				methods.controlPanel('init');
-				// $(".tipsy").remove();
 			});
 
 		},
@@ -103,9 +105,9 @@ var debugOn = false;
 					if (( testURI ? testURI : resource).indexOf(keySplit[a]) == 0) {
 						res = getSparqlConf(module, value, lodLiveProfile).replace(/\{URI\}/ig, resource.replace(/^.*~~/, ''));
 						if (value.proxy) {
-							url = value.proxy + '?endpoint=' + value.endpoint + "&" + (value.endpointType ? $.jStorage.get('endpoints')[value.endpointType] : $.jStorage.get('endpoints')['all']) + "&query=" + encodeURIComponent(res);
+							url = value.proxy + '?endpoint=' + value.endpoint + "&" + (value.endpointType ? lodliveStore.get('endpoints')[value.endpointType] : lodliveStore.get('endpoints')['all']) + "&query=" + encodeURIComponent(res);
 						} else {
-							url = value.endpoint + "?" + (value.endpointType ? $.jStorage.get('endpoints')[value.endpointType] : $.jStorage.get('endpoints')['all']) + "&query=" + encodeURIComponent(res);
+							url = value.endpoint + "?" + (value.endpointType ? lodliveStore.get('endpoints')[value.endpointType] : lodliveStore.get('endpoints')['all']) + "&query=" + encodeURIComponent(res);
 						}
 						endpoint = value.endpoint;
 						return false;
@@ -120,7 +122,7 @@ var debugOn = false;
 				url = 'http://system/dummy?' + resource;
 			}
 
-			if (endpoint && $.jStorage.get('showInfoConsole')) {
+			if (endpoint && lodliveStore.get('showInfoConsole')) {
 				methods.queryConsole('log', {
 					title : endpoint,
 					text : res,
@@ -132,7 +134,7 @@ var debugOn = false;
 		},
 		guessingEndpoint : function(uri, onSuccess, onFail) { 
 			var base = uri.replace(/(^https?:\/\/[^\/]+\/).+/, "$1");
-			var guessedEndpoint = base + "sparql?" + $.jStorage.get('endpoints')['all'] + "&query=" + encodeURIComponent("select * where {?a ?b ?c} LIMIT 1");
+			var guessedEndpoint = base + "sparql?" + lodliveStore.get('endpoints')['all'] + "&query=" + encodeURIComponent("select * where {?a ?b ?c} LIMIT 1");
 			$.jsonp({
 				url : guessedEndpoint,
 				success : function(data) {
@@ -151,16 +153,6 @@ var debugOn = false;
 					onFail();
 				}
 			});
-		},
-		doStats : function(uri) {
-			if ($('#stats').length == 0) {
-				$('body').append('<div id="stats"><iframe src="stats.html?' + uri + '" style="display:none"></iframe></div>');
-			} else if ($('#stats').children('iframe').length == 10) {
-				$('#stats').empty();
-				$('#stats').append('<iframe src="stats.html?' + uri + '" style="display:none"></iframe>');
-			} else {
-				$('#stats').append('<iframe src="stats.html?' + uri + '" style="display:none"></iframe>');
-			}
 		},
 		msg : function(msg, action, type, endpoint, inverse) {
 			// area dei messaggi
@@ -211,9 +203,6 @@ var debugOn = false;
 						msgPanel.append("<div class=\"from\">" + msgs[0] + "</div>");
 					}
 				}
-				/*
-				 * msgPanel.css({ left : $('body').scrollLeft(), top : $('body').scrollTop() + $(window).height() - msgPanel.height(), zIndex : 99999999 });
-				 */
 				msgPanel.css({
 					left : 0,
 					top : $(window).height() - msgPanel.height(),
@@ -286,7 +275,7 @@ var debugOn = false;
 
 					if (toLog.text) {
 						var aDiv = $('<div><span><span class="contentArea">' + (toLog.text).replace(/</gi, "&lt;").replace(/>/gi, "&gt;") + '</span></span></div>');
-						var aEndpoint = $.trim(panel.find('h4.t' + localId).clone().find('strong').remove().end().text());
+						var aEndpoint = panel.find('h4.t' + localId).clone().find('strong').remove().end().text().trim();
 						if (aEndpoint.indexOf("http:") == 0) {
 							var aLink = $('<span class="linkArea sprite" title="' + lang('executeThisQuery') + '"></span>');
 							aLink.click(function() {
@@ -326,7 +315,6 @@ var debugOn = false;
 				delete infoMap[id];
 				globalInfoPanelMap = infoMap;
 			} else if (action == 'show') {
-				// panel.show();
 				context.append(panel);
 			} else if (action == 'close') {
 				panel.detach();
@@ -347,12 +335,12 @@ var debugOn = false;
 					position : 'fixed',
 					zIndex : 999
 				});
-				panel.append('<div class="panel options sprite" ></div>');
-				panel.append('<div class="panel legend sprite" ></div>');
-				panel.append('<div class="panel help sprite" ></div>');
+				panel.append('<div class="panel options sprite" role="button" tabindex="0" aria-label="Options"></div>');
+				panel.append('<div class="panel legend sprite" role="button" tabindex="0" aria-label="Legend"></div>');
+				panel.append('<div class="panel help sprite" role="button" tabindex="0" aria-label="Help"></div>');
 				panel.append('<div class="panel" ></div>');
-				panel.append('<div class="panel2 maps sprite" ></div>');
-				panel.append('<div class="panel2 images sprite" ></div>');
+				panel.append('<div class="panel2 maps sprite" role="button" tabindex="0" aria-label="Maps"></div>');
+				panel.append('<div class="panel2 images sprite" role="button" tabindex="0" aria-label="Images"></div>');
 
 				panel.children('.panel,.panel2').hover(function() {
 					$(this).setBackgroundPosition({
@@ -365,11 +353,12 @@ var debugOn = false;
 				});
 
 				context.append(panel);
+				makeKeyboardAccessible(panel.children('.panel,.panel2'));
 
 				panel.attr("data-top", panel.position().top);
 				panel.children('.panel').click(function() {
 					panel.children('.panel,.panel2').hide();
-					var close = $('<div class="panel close sprite" ></div>');
+					var close = $('<div class="panel close sprite" role="button" tabindex="0" aria-label="Close"></div>');
 					close.click(function() {
 						$(this).remove();
 						panel.children('#panelContent').remove();
@@ -387,6 +376,7 @@ var debugOn = false;
 						});
 					});
 					panel.append(close);
+					makeKeyboardAccessible(close);
 					close.css({
 						position : 'absolute',
 						left : 241,
@@ -398,49 +388,50 @@ var debugOn = false;
 						var anUl = $('<ul class="optionsList"></ul>');
 						panelContent.append('<div></div>');
 						panelContent.children('div').append('<h2>' + lang('options') + '</h2>').append(anUl);
-						anUl.append('<li ' + ($.jStorage.get('doInverse') ? 'class="checked"' : 'class="check"') + ' data-value="inverse" ><span class="spriteLegenda"></span>' + lang('generateInverse') + '</li>');
-						anUl.append('<li ' + ($.jStorage.get('doAutoExpand') ? 'class="checked"' : 'class="check"') + ' data-value="autoExpand" ><span class="spriteLegenda"></span>' + lang('autoExpand') + '</li>');
-						anUl.append('<li ' + ($.jStorage.get('doAutoSameas') ? 'class="checked"' : 'class="check"') + ' data-value="autoSameas"><span class="spriteLegenda"></span>' + lang('autoSameAs') + '</li>');
+						anUl.append('<li ' + (lodliveStore.get('doInverse') ? 'class="checked"' : 'class="check"') + ' data-value="inverse" role="checkbox" tabindex="0" aria-checked="' + !!lodliveStore.get('doInverse') + '"><span class="spriteLegenda"></span>' + lang('generateInverse') + '</li>');
+						anUl.append('<li ' + (lodliveStore.get('doAutoExpand') ? 'class="checked"' : 'class="check"') + ' data-value="autoExpand" role="checkbox" tabindex="0" aria-checked="' + !!lodliveStore.get('doAutoExpand') + '"><span class="spriteLegenda"></span>' + lang('autoExpand') + '</li>');
+						anUl.append('<li ' + (lodliveStore.get('doAutoSameas') ? 'class="checked"' : 'class="check"') + ' data-value="autoSameas" role="checkbox" tabindex="0" aria-checked="' + !!lodliveStore.get('doAutoSameas') + '"><span class="spriteLegenda"></span>' + lang('autoSameAs') + '</li>');
 
-						anUl.append('<li ' + ($.jStorage.get('doCollectImages') ? 'class="checked"' : 'class="check"') + ' data-value="autoCollectImages"><span class="spriteLegenda"></span>' + lang('autoCollectImages') + '</li>');
-						anUl.append('<li ' + ($.jStorage.get('doDrawMap') ? 'class="checked"' : 'class="check"') + ' data-value="autoDrawMap"><span class="spriteLegenda"></span>' + lang('autoDrawMap') + '</li>');
+						anUl.append('<li ' + (lodliveStore.get('doCollectImages') ? 'class="checked"' : 'class="check"') + ' data-value="autoCollectImages" role="checkbox" tabindex="0" aria-checked="' + !!lodliveStore.get('doCollectImages') + '"><span class="spriteLegenda"></span>' + lang('autoCollectImages') + '</li>');
+						anUl.append('<li ' + (lodliveStore.get('doDrawMap') ? 'class="checked"' : 'class="check"') + ' data-value="autoDrawMap" role="checkbox" tabindex="0" aria-checked="' + !!lodliveStore.get('doDrawMap') + '"><span class="spriteLegenda"></span>' + lang('autoDrawMap') + '</li>');
 
 						anUl.append('<li>&#160;</li>');
-						anUl.append('<li class="reload"><span  class="spriteLegenda"></span>' + lang('restart') + '</li>');
+						anUl.append('<li class="reload" role="button" tabindex="0"><span  class="spriteLegenda"></span>' + lang('restart') + '</li>');
+						makeKeyboardAccessible(anUl.children('li[tabindex]'));
 						anUl.children('.reload').click(function() {
 							context.lodlive('close');
 						});
 						anUl.children('li[data-value]').click(function() {
 							if ($(this).hasClass('check')) {
 								if ($(this).attr("data-value") == 'inverse') {
-									$.jStorage.set('doInverse', true);
+									lodliveStore.set('doInverse', true);
 								} else if ($(this).attr("data-value") == 'autoExpand') {
-									$.jStorage.set('doAutoExpand', true);
+									lodliveStore.set('doAutoExpand', true);
 								} else if ($(this).attr("data-value") == 'autoSameas') {
-									$.jStorage.set('doAutoSameas', true);
+									lodliveStore.set('doAutoSameas', true);
 								} else if ($(this).attr("data-value") == 'autoCollectImages') {
-									$.jStorage.set('doCollectImages', true);
+									lodliveStore.set('doCollectImages', true);
 									panel.children('div.panel2.images').removeClass('inactive');
 								} else if ($(this).attr("data-value") == 'autoDrawMap') {
-									$.jStorage.set('doDrawMap', true);
+									lodliveStore.set('doDrawMap', true);
 									panel.children('div.panel2.maps').removeClass('inactive');
 								}
-								$(this).attr('class', "checked");
+								$(this).attr('class', "checked").attr('aria-checked', 'true');
 							} else {
 								if ($(this).attr("data-value") == 'inverse') {
-									$.jStorage.set('doInverse', false);
+									lodliveStore.set('doInverse', false);
 								} else if ($(this).attr("data-value") == 'autoExpand') {
-									$.jStorage.set('doAutoExpand', false);
+									lodliveStore.set('doAutoExpand', false);
 								} else if ($(this).attr("data-value") == 'autoSameas') {
-									$.jStorage.set('doAutoSameas', false);
+									lodliveStore.set('doAutoSameas', false);
 								} else if ($(this).attr("data-value") == 'autoCollectImages') {
-									$.jStorage.set('doCollectImages', false);
+									lodliveStore.set('doCollectImages', false);
 									panel.children('div.panel2.images').addClass('inactive');
 								} else if ($(this).attr("data-value") == 'autoDrawMap') {
 									panel.children('div.panel2.maps').addClass('inactive');
-									$.jStorage.set('doDrawMap', false);
+									lodliveStore.set('doDrawMap', false);
 								}
-								$(this).attr('class', "check");
+								$(this).attr('class', "check").attr('aria-checked', 'false');
 							}
 						});
 
@@ -478,10 +469,10 @@ var debugOn = false;
 						}
 					}
 				});
-				if (!$.jStorage.get('doCollectImages', true)) {
+				if (!lodliveStore.get('doCollectImages', true)) {
 					panel.children('div.panel2.images').addClass('inactive').hide();
 				}
-				if (!$.jStorage.get('doDrawMap', true)) {
+				if (!lodliveStore.get('doDrawMap', true)) {
 					panel.children('div.panel2.maps').addClass('inactive').hide();
 				}
 
@@ -520,15 +511,16 @@ var debugOn = false;
 							mapPanel = $('<div id="mapPanel"></div>');
 							panelContent.width(800);
 							panelContent.append(mapPanel);
-							$('#mapPanel').gmap3({
-								action : 'init',
-								options : {
-									zoom : 2,
-									mapTypeId : google.maps.MapTypeId.HYBRID
-								}
-							});
+							leafletMap = L.map('mapPanel').setView([0, 0], 2);
+							L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+								attribution : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+								maxZoom : 19
+							}).addTo(leafletMap);
 						} else {
 							mapPanel.show();
+							if (leafletMap) {
+								leafletMap.invalidateSize();
+							}
 						}
 						methods.updateMapPanel(panel);
 					} else if ($(this).hasClass("images")) {
@@ -571,33 +563,34 @@ var debugOn = false;
 			}
 		},
 		updateMapPanel : function(panel) {
-			if ($.jStorage.get('doDrawMap', true)) {
+			if (lodliveStore.get('doDrawMap', true)) {
 
 				if ($("#mapPanel:visible", panel).length > 0) {
-					$('#mapPanel').gmap3({
-						action : 'clear'
-					});
+					// Clear existing markers
+					for (var i = 0; i < leafletMarkers.length; i++) {
+						leafletMap.removeLayer(leafletMarkers[i]);
+					}
+					leafletMarkers = [];
 					var panelContent = $('#panel2Content', panel);
 					panelContent.width(800);
 					var close = $('.close2', panel);
-					var mapsMap = $.jStorage.get('mapsMap');
-					var mapSize = 0;
+					var mapsMap = lodliveStore.get('mapsMap');
+					var bounds = [];
 					for (var prop in mapsMap) {
 						if (mapsMap.hasOwnProperty(prop)) {
-							mapSize++;
+							var latLng = [parseFloat(mapsMap[prop].lats), parseFloat(mapsMap[prop].longs)];
+							var marker = L.marker(latLng).addTo(leafletMap);
+							marker.bindPopup(decodeURIComponent(mapsMap[prop].title).replace(/\n/g, '<br/>'));
+							leafletMarkers.push(marker);
+							bounds.push(latLng);
 						}
 					}
-					for (var prop in mapsMap) {
-						if (mapsMap.hasOwnProperty(prop)) {
-							$('#mapPanel').gmap3({
-								action : 'addMarker',
-								latLng : [mapsMap[prop].lats, mapsMap[prop].longs],
-								title : unescape(mapsMap[prop].title)
-							}, mapSize > 1 ? {
-								action : "autofit"
-							} : {});
-						}
+					if (bounds.length > 1) {
+						leafletMap.fitBounds(bounds);
+					} else if (bounds.length === 1) {
+						leafletMap.setView(bounds[0], 10);
 					}
+					leafletMap.invalidateSize();
 
 					close.css({
 						position : 'absolute',
@@ -611,13 +604,13 @@ var debugOn = false;
 			}
 		},
 		updateImagePanel : function(panel) {
-			if ($.jStorage.get('doCollectImages', true)) {
+			if (lodliveStore.get('doCollectImages', true)) {
 
 				var imagePanel = $('#imagePanel', panel).children("span");
 				if ($("#imagePanel:visible", panel).length > 0) {
 					var panelContent = $('#panel2Content', panel);
 					var close = $('.close2', panel);
-					var imageMap = $.jStorage.get('imagesMap');
+					var imageMap = lodliveStore.get('imagesMap');
 					var mapSize = 0;
 					for (var prop in imageMap) {
 						if (imageMap.hasOwnProperty(prop)) {
@@ -631,10 +624,10 @@ var debugOn = false;
 							if (imageMap.hasOwnProperty(prop)) {
 								for (var a = 0; a < imageMap[prop].length; a++) {
 									for (var key in imageMap[prop][a]) {
-										if (($.jStorage.get('noImagesMap', {})[prop + counter])) {
+										if ((lodliveStore.get('noImagesMap', {})[prop + counter])) {
 											counter--;
 										} else if (imagePanel.children('.img-' + prop + '-' + counter).length == 0) {
-											var img = $('<a href="' + unescape(key) + '" class="sprite relatedImage img-' + prop + '-' + counter + '"><img rel="' + unescape(imageMap[prop][a][key]) + '" src="' + unescape(key) + '"/></a>"');
+											var img = $('<a href="' + decodeURIComponent(key) + '" class="sprite relatedImage img-' + prop + '-' + counter + '"><img rel="' + decodeURIComponent(imageMap[prop][a][key]) + '" src="' + decodeURIComponent(key) + '"/></a>"');
 											img.attr("data-prop", prop);
 											imagePanel.prepend(img);
 											img.fancybox({
@@ -647,7 +640,7 @@ var debugOn = false;
 												'showCloseButton' : false,
 												'overlayShow' : false
 											});
-											img.children('img').error(function() {
+											img.children('img').on('error', function() {
 												$(this).parent().remove();
 												counter--;
 												if (counter < 3) {
@@ -664,16 +657,16 @@ var debugOn = false;
 													left : panelContent.width() + 1,
 													top : 0
 												});
-												var noImage = $.jStorage.get('noImagesMap', {});
+												var noImage = lodliveStore.get('noImagesMap', {});
 												noImage[prop + counter] = true;
-												$.jStorage.set('noImagesMap', noImage);
+												lodliveStore.set('noImagesMap', noImage);
 												close.css({
 													position : 'absolute',
 													left : panelContent.width() + 1,
 													top : 0
 												});
 											});
-											img.children('img').load(function() {
+											img.children('img').on('load', function() {
 												var titolo = $(this).attr('rel');
 												if ($(this).width() < $(this).height()) {
 													$(this).height($(this).height() * 113 / $(this).width());
@@ -761,17 +754,17 @@ var debugOn = false;
 			if (times > 0) {
 				times--;
 				var css = object.css('background-position');
-				object.doTimeout(speed, function() {
+				setTimeout(function() {
 					object.css({
 						'background-position' : backmove
 					});
-					object.doTimeout(speed, function() {
+					setTimeout(function() {
 						object.css({
 							'background-position' : css
 						});
 						methods.highlight(object, times, speed, backmove);
-					});
-				});
+					}, speed);
+				}, speed);
 			}
 		},
 		renewDrag : function(aDivList) {
@@ -780,18 +773,17 @@ var debugOn = false;
 			}
 
 			aDivList.each(function() {
-				if ($(this).attr("class").indexOf('ui-draggable') == -1) {
+				if (!$(this).hasClass('ui-draggable')) {
 					$(this).draggable({
-						// handle:'.boxTitle',
 						stack : '.boxWrapper',
 						containment : "parent",
 						start : function() {
 							$(".toolBox").remove();
 							$('#line-' + $(this).attr("id")).clearCanvas();
-							var generatedRev = $.jStorage.get('storeIds-generatedByRev-' + $(this).attr("id"));
+							var generatedRev = lodliveStore.get('storeIds-generatedByRev-' + $(this).attr("id"));
 							if (generatedRev) {
 								for (var a = 0; a < generatedRev.length; a++) {
-									generated = $.jStorage.get('storeIds-generatedBy-' + generatedRev[a]);
+									generated = lodliveStore.get('storeIds-generatedBy-' + generatedRev[a]);
 									$('#line-' + generatedRev[a]).clearCanvas();
 								}
 							}
@@ -879,7 +871,7 @@ var debugOn = false;
 			// verifico se esistono box rappresentativi dello stesso documento
 			// nella pagina
 			if (newObj.length == 0) {
-				newObj = $($.jStorage.get('boxTemplate'));
+				newObj = $(lodliveStore.get('boxTemplate'));
 				exist = false;
 			}
 			var originalCircus = $("#" + ele.attr("data-circleId"));
@@ -890,7 +882,7 @@ var debugOn = false;
 				if (debugOn) {
 					console.debug((new Date().getTime() - start) + '	addNewDoc 02 ');
 				}
-				var connected = $.jStorage.get('storeIds-generatedBy-' + originalCircus.attr("id"));
+				var connected = lodliveStore.get('storeIds-generatedBy-' + originalCircus.attr("id"));
 				if (!connected) {
 					connected = [aId];
 				} else {
@@ -903,8 +895,8 @@ var debugOn = false;
 				if (debugOn) {
 					console.debug((new Date().getTime() - start) + '	addNewDoc 03 ');
 				}
-				$.jStorage.set('storeIds-generatedBy-' + originalCircus.attr("id"), connected);
-				connected = $.jStorage.get('storeIds-generatedByRev-' + aId);
+				lodliveStore.set('storeIds-generatedBy-' + originalCircus.attr("id"), connected);
+				connected = lodliveStore.get('storeIds-generatedByRev-' + aId);
 				if (!connected) {
 					connected = [originalCircus.attr("id")];
 				} else {
@@ -915,7 +907,7 @@ var debugOn = false;
 				if (debugOn) {
 					console.debug((new Date().getTime() - start) + '	addNewDoc 04 ');
 				}
-				$.jStorage.set('storeIds-generatedByRev-' + aId, connected);
+				lodliveStore.set('storeIds-generatedByRev-' + aId, connected);
 			}
 
 			var propertyName = ele.attr("data-property");
@@ -934,20 +926,8 @@ var debugOn = false;
 				}
 				var pos = parseInt(ele.attr("data-circlePos"), 10);
 				var parts = parseInt(ele.attr("data-circleParts"), 10);
-				// var chordsListExpand = this.lodlive('circleChords',
-				// ele.attr("data-circleParts") > 10 ? (pos % 2 > 0 ?
-				// originalCircus.width() * 3 : originalCircus.width() * 2) :
-				// originalCircus.width() * 5 / 2,
-				// parseInt(ele.attr("data-circleParts"), 10) + 4,
-				// originalCircus.position().left + obj.width() / 2,
-				// originalCircus.position().top + originalCircus.height() / 2,
-				// pos + 1);
 				var chordsListExpand = methods.circleChords(parts > 10 ? (pos % 2 > 0 ? originalCircus.width() * 3 : originalCircus.width() * 2) : originalCircus.width() * 5 / 2, parts, originalCircus.position().left + obj.width() / 2, originalCircus.position().top + originalCircus.height() / 2, null, pos);
 				context.append(newObj);
-				/*
-				 * newObj.css({ "left" : originalCircus.position().left + originalCircus.width() / 2 - newObj.width() / 2, "top" : originalCircus.position().top +
-				 * originalCircus.height() / 2 - newObj.height() / 2, "opacity" : 0.1, "zIndex" : 99 });
-				 */
 				newObj.css({
 					"left" : (chordsListExpand[0][0] - newObj.height() / 2),
 					"top" : (chordsListExpand[0][1] - newObj.width() / 2),
@@ -955,10 +935,6 @@ var debugOn = false;
 					"zIndex" : 99
 				});
 
-				/*
-				 * newObj.animate({ "left" : (chordsListExpand[pos][0] - newObj.height() / 2), "top" : (chordsListExpand[pos][1] - newObj.width() / 2), "opacity" : 1 }, 400, '',
-				 * function() {
-				 */
 				methods.renewDrag(context.children('.boxWrapper'));
 				if (debugOn) {
 					console.debug((new Date().getTime() - start) + '	addNewDoc 07 ');
@@ -967,7 +943,7 @@ var debugOn = false;
 					if (debugOn) {
 						console.debug((new Date().getTime() - start) + '	addNewDoc 08 ');
 					}
-					if ($.jStorage.get('doInverse')) {
+					if (lodliveStore.get('doInverse')) {
 						methods.openDoc($(ele).attr("rel"), newObj, fromInverse);
 					} else {
 						methods.openDoc($(ele).attr("rel"), newObj);
@@ -979,7 +955,6 @@ var debugOn = false;
 					}
 					methods.openDoc($(ele).attr("rel"), newObj, fromInverse);
 				}
-				// });
 			} else {
 				if (!isInverse) {
 					if (debugOn) {
@@ -990,10 +965,6 @@ var debugOn = false;
 				} else {
 					if (debugOn) {
 						console.debug((new Date().getTime() - start) + '	addNewDoc 11 ');
-					}
-					try {
-						// $(fromInverse).click();
-					} catch (e) {
 					}
 				}
 			}
@@ -1010,14 +981,13 @@ var debugOn = false;
 				start = new Date().getTime();
 			}
 			$(".toolBox").remove();
-			// $(".tipsy").remove();
 
 			var id = obj.attr("id");
 			methods.queryConsole('remove', {
 				uriId : obj.attr('rel')
 			});
 			$("#line-" + id).clearCanvas();
-			var generatedRev = $.jStorage.get('storeIds-generatedByRev-' + id);
+			var generatedRev = lodliveStore.get('storeIds-generatedByRev-' + id);
 			if (generatedRev) {
 				for (var a = 0; a < generatedRev.length; a++) {
 					$('#line-' + generatedRev[a]).clearCanvas();
@@ -1025,24 +995,22 @@ var debugOn = false;
 			}
 			methods.docInfo('', 'close');
 
-			if ($.jStorage.get('doCollectImages', true)) {
-				var imagesMap = $.jStorage.get("imagesMap", {});
+			if (lodliveStore.get('doCollectImages', true)) {
+				var imagesMap = lodliveStore.get("imagesMap", {});
 				if (imagesMap[id]) {
 					delete imagesMap[id];
-					$.jStorage.set('imagesMap', imagesMap);
+					lodliveStore.set('imagesMap', imagesMap);
 					methods.updateImagePanel($('#controlPanel'));
 					$('#controlPanel').find('a[class*=img-' + id + ']').remove();
 				}
 			}
 
-			if ($.jStorage.get('doDrawMap', true)) {
-				var mapsMap = $.jStorage.get("mapsMap", {});
+			if (lodliveStore.get('doDrawMap', true)) {
+				var mapsMap = lodliveStore.get("mapsMap", {});
 				if (mapsMap[id]) {
 					delete mapsMap[id];
-					$.jStorage.set('mapsMap', mapsMap);
+					lodliveStore.set('mapsMap', mapsMap);
 					methods.updateMapPanel($('#controlPanel'));
-					// $('#controlPanel').find('a[class*=img-' + id +
-					// ']').remove();
 				}
 			}
 
@@ -1065,12 +1033,11 @@ var debugOn = false;
 						}
 					}
 				});
-				// $('#'+id).children('.innerPage').detach();
-				var generated = $.jStorage.get('storeIds-generatedBy-' + id);
-				var generatedRev = $.jStorage.get('storeIds-generatedByRev-' + id);
+				var generated = lodliveStore.get('storeIds-generatedBy-' + id);
+				var generatedRev = lodliveStore.get('storeIds-generatedByRev-' + id);
 				if (generatedRev) {
 					for (var int = 0; int < generatedRev.length; int++) {
-						var generatedBy = $.jStorage.get('storeIds-generatedBy-' + generatedRev[int]);
+						var generatedBy = lodliveStore.get('storeIds-generatedBy-' + generatedRev[int]);
 						if (generatedBy) {
 							for (var int2 = 0; int2 < generatedBy.length; int2++) {
 								if (generatedBy[int2] == id) {
@@ -1078,13 +1045,13 @@ var debugOn = false;
 								}
 							}
 						}
-						$.jStorage.set('storeIds-generatedBy-' + generatedRev[int], generatedBy);
+						lodliveStore.set('storeIds-generatedBy-' + generatedRev[int], generatedBy);
 					}
 				}
 
 				if (generated) {
 					for (var int = 0; int < generated.length; int++) {
-						var generatedBy = $.jStorage.get('storeIds-generatedByRev-' + generated[int]);
+						var generatedBy = lodliveStore.get('storeIds-generatedByRev-' + generated[int]);
 						if (generatedBy) {
 							for (var int2 = 0; int2 < generatedBy.length; int2++) {
 								if (generatedBy[int2] == id) {
@@ -1092,13 +1059,13 @@ var debugOn = false;
 								}
 							}
 						}
-						$.jStorage.set('storeIds-generatedByRev-' + generated[int], generatedBy);
+						lodliveStore.set('storeIds-generatedByRev-' + generated[int], generatedBy);
 					}
 				}
-				generatedRev = $.jStorage.get('storeIds-generatedByRev-' + id);
+				generatedRev = lodliveStore.get('storeIds-generatedByRev-' + id);
 				if (generatedRev) {
 					for (var a = 0; a < generatedRev.length; a++) {
-						generated = $.jStorage.get('storeIds-generatedBy-' + generatedRev[a]);
+						generated = lodliveStore.get('storeIds-generatedBy-' + generatedRev[a]);
 						if (generated) {
 							for (var a2 = 0; a2 < generated.length; a2++) {
 								methods.drawaLine($('#' + generatedRev[a]), $("#" + generated[a2]));
@@ -1106,8 +1073,8 @@ var debugOn = false;
 						}
 					}
 				}
-				$.jStorage.set('storeIds-generatedByRev-' + id, []);
-				$.jStorage.set('storeIds-generatedBy-' + id, []);
+				lodliveStore.set('storeIds-generatedByRev-' + id, []);
+				lodliveStore.set('storeIds-generatedBy-' + id, []);
 
 			});
 
@@ -1125,10 +1092,11 @@ var debugOn = false;
 
 			obj.find("div.relatedBox").each(function() {
 				$(this).attr("relmd5", MD5($(this).attr("rel")));
+				$(this).attr("role", "button").attr("tabindex", "0");
+				makeKeyboardAccessible($(this));
 				$(this).click(function() {
 					$(this).addClass("exploded");
 					methods.addNewDoc(obj, $(this));
-					// methods.docInfo('', 'close');
 					return false;
 				});
 				$(this).hover(function() {
@@ -1139,6 +1107,8 @@ var debugOn = false;
 			});
 
 			obj.find(".groupedRelatedBox").each(function() {
+				$(this).attr("role", "button").attr("tabindex", "0");
+				makeKeyboardAccessible($(this));
 				$(this).click(function() {
 					if ($(this).data('show')) {
 						$(this).data('show', false);
@@ -1177,27 +1147,27 @@ var debugOn = false;
 			obj.find(".actionBox[rel=tools]").click(function() {
 				if ($(".toolBox:visible").length == 0) {
 					var pos = obj.position();
-					var tools = $("<div class=\"toolBox sprite\" style=\"display:none\" ><div class=\"innerActionBox infoQ\" rel=\"infoQ\" title=\"" + lang('moreInfoOnThis') + "\" >&#160;</div><div class=\"innerActionBox center\" rel=\"center\" title=\"" + lang('centerClose') + "\" >&#160;</div><div class=\"innerActionBox newpage\" rel=\"newpage\" title=\"" + lang('openOnline') + "\" >&#160;</div><div class=\"innerActionBox expand\" rel=\"expand\" title=\"" + lang('openRelated') + "\" >&#160;</div><div class=\"innerActionBox remove\" rel=\"remove\" title=\"" + lang('removeResource') + "\" >&#160;</div></div>");
+					var tools = $("<div class=\"toolBox sprite\" style=\"display:none\" role=\"toolbar\" aria-label=\"Resource tools\"><div class=\"innerActionBox infoQ\" rel=\"infoQ\" title=\"" + lang('moreInfoOnThis') + "\" role=\"button\" tabindex=\"0\" aria-label=\"" + lang('moreInfoOnThis') + "\">&#160;</div><div class=\"innerActionBox center\" rel=\"center\" title=\"" + lang('centerClose') + "\" role=\"button\" tabindex=\"0\" aria-label=\"" + lang('centerClose') + "\">&#160;</div><div class=\"innerActionBox newpage\" rel=\"newpage\" title=\"" + lang('openOnline') + "\" role=\"button\" tabindex=\"0\" aria-label=\"" + lang('openOnline') + "\">&#160;</div><div class=\"innerActionBox expand\" rel=\"expand\" title=\"" + lang('openRelated') + "\" role=\"button\" tabindex=\"0\" aria-label=\"" + lang('openRelated') + "\">&#160;</div><div class=\"innerActionBox remove\" rel=\"remove\" title=\"" + lang('removeResource') + "\" role=\"button\" tabindex=\"0\" aria-label=\"" + lang('removeResource') + "\">&#160;</div></div>");
 					context.append(tools);
 					tools.css({
 						top : pos.top - 23,
 						left : pos.left + 10
 					});
+					makeKeyboardAccessible(tools.find('.innerActionBox'));
 					tools.fadeIn('fast');
 					tools.find(".innerActionBox[rel=expand]").each(function() {
 						$(this).click(function() {
 							tools.remove();
-							// $('.tipsy').remove();
 							methods.docInfo('', 'close');
 							var idx = 0;
 							var elements = obj.find("div.relatedBox:visible");
-							elements.doTimeout(250, function() {
-								var elem = this.eq(idx++);
+							(function expandNext() {
+								var elem = elements.eq(idx++);
 								if (elem.length) {
 									elem.trigger('click');
-									return true;
+									setTimeout(expandNext, 250);
 								}
-							});
+							})();
 						});
 						$(this).hover(function() {
 							tools.setBackgroundPosition({
@@ -1228,7 +1198,6 @@ var debugOn = false;
 					});
 					tools.find(".innerActionBox[rel=remove]").each(function() {
 						$(this).click(function() {
-							// $('.tipsy').remove();
 							methods.removeDoc(obj);
 							tools.remove();
 							methods.docInfo('', 'close');
@@ -1246,7 +1215,6 @@ var debugOn = false;
 					tools.find(".innerActionBox[rel=newpage]").each(function() {
 						$(this).click(function() {
 							tools.remove();
-							// $('.tipsy').remove();
 							methods.docInfo('', 'close');
 							window.open(obj.attr("rel"));
 						});
@@ -1304,7 +1272,7 @@ var debugOn = false;
 				// attivo lo sparql interno basato su sesame
 				var res = getSparqlConf('document', lodLiveProfile['default'], lodLiveProfile).replace(/\{URI\}/ig, URI);
 				var url = lodLiveProfile['default'].endpoint + "?uri=" + encodeURIComponent(URI) + "&query=" + encodeURIComponent(res);
-				if ($.jStorage.get('showInfoConsole')) {
+				if (lodliveStore.get('showInfoConsole')) {
 					methods.queryConsole('log', {
 						title : lang('endpointNotConfiguredSoInternal'),
 						text : res,
@@ -1328,11 +1296,17 @@ var debugOn = false;
 						json = json['results']['bindings'];
 						$.each(json, function(key, value) {
 							if (value.object.type == 'uri') {
-								eval('uris.push({\'' + value['property']['value'] + '\':\'' + escape(value.object.value) + '\'})');
+								var _o = {};
+								_o[value['property']['value']] = encodeURIComponent(value.object.value);
+								uris.push(_o);
 							} else if (value.object.type == 'bnode') {
-								eval('bnodes.push({\'' + value['property']['value'] + '\':\'' + escape(value.object.value) + '\'})');
+								var _o = {};
+								_o[value['property']['value']] = encodeURIComponent(value.object.value);
+								bnodes.push(_o);
 							} else {
-								eval('values.push({\'' + value['property']['value'] + '\':\'' + escape(value.object.value) + '\'})');
+								var _o = {};
+								_o[value['property']['value']] = encodeURIComponent(value.object.value);
+								values.push(_o);
 							}
 						});
 						destBox.html('');
@@ -1388,7 +1362,6 @@ var debugOn = false;
 							destBox.css({
 								position : 'fixed',
 								left : $(window).width() - $('#docInfo').width() - 20,
-								// height : $(window).height() - 20,
 								top : 0
 							});
 							destBox.attr("data-top", destBox.position().top);
@@ -1397,11 +1370,17 @@ var debugOn = false;
 							json = json['results']['bindings'];
 							$.each(json, function(key, value) {
 								if (value.object.type == 'uri') {
-									eval('uris.push({\'' + value['property']['value'] + '\':\'' + escape(value.object.value) + '\'})');
+									var _o = {};
+									_o[value['property']['value']] = encodeURIComponent(value.object.value);
+									uris.push(_o);
 								} else if (value.object.type == 'bnode') {
-									eval('bnodes.push({\'' + value['property']['value'] + '\':\'' + escape(value.object.value) + '\'})');
+									var _o = {};
+									_o[value['property']['value']] = encodeURIComponent(value.object.value);
+									bnodes.push(_o);
 								} else {
-									eval('values.push({\'' + value['property']['value'] + '\':\'' + escape(value.object.value) + '\'})');
+									var _o = {};
+									_o[value['property']['value']] = encodeURIComponent(value.object.value);
+									values.push(_o);
 								}
 							});
 							destBox.html('');
@@ -1417,11 +1396,6 @@ var debugOn = false;
 					});
 				}
 			} else if (action == 'move') {
-				/*
-				 * if ($('#docInfo').height() > $(window).height() + 10) { $('#docInfo').css({ position : 'absolute', left : $(window).width() + $('body').scrollLeft() -
-				 * $('#docInfo').width() - 20, top : $('#docInfo').attr("data-top") }); } else { $('#docInfo').css({ position : 'fixed', left : $(window).width() -
-				 * $('#docInfo').width() - 20, top : 0 }); }
-				 */
 
 			} else {
 				$('#docInfo').fadeOut('fast', null, function() {
@@ -1448,10 +1422,10 @@ var debugOn = false;
 					var labeArray = label.split("\|");
 					label = "\n";
 					for (var o = 0; o < labeArray.length; o++) {
-						if (lodLiveProfile.arrows[$.trim(labeArray[o])]) {
-							lineStyle = lodLiveProfile.arrows[$.trim(labeArray[o])] + "Line";
+						if (lodLiveProfile.arrows[labeArray[o].trim()]) {
+							lineStyle = lodLiveProfile.arrows[labeArray[o].trim()] + "Line";
 						}
-						var shortKey = $.trim(labeArray[o]);
+						var shortKey = labeArray[o].trim();
 						
 						if(lodLiveProfile['labeler'][shortKey]){
 							// replace property with a specific label
@@ -1480,12 +1454,13 @@ var debugOn = false;
 					console.debug((new Date().getTime() - start) + '	processDraw ');
 				}
 			} catch (e) {
+				console.error('processDraw error:', e);
 			}
 		},
 		drawAllLines : function(obj) {
 
-			var generated = $.jStorage.get('storeIds-generatedBy-' + obj.attr("id"));
-			var generatedRev = $.jStorage.get('storeIds-generatedByRev-' + obj.attr("id"));
+			var generated = lodliveStore.get('storeIds-generatedBy-' + obj.attr("id"));
+			var generatedRev = lodliveStore.get('storeIds-generatedByRev-' + obj.attr("id"));
 			// elimino la riga se giÃ  presente (in caso di
 			// spostamento di un
 			// box)
@@ -1497,7 +1472,7 @@ var debugOn = false;
 			}
 			if (generatedRev) {
 				for (var a = 0; a < generatedRev.length; a++) {
-					generated = $.jStorage.get('storeIds-generatedBy-' + generatedRev[a]);
+					generated = lodliveStore.get('storeIds-generatedBy-' + generatedRev[a]);
 					$('#line-' + generatedRev[a]).clearCanvas();
 					if (generated) {
 						for (var a2 = 0; a2 < generated.length; a2++) {
@@ -1516,9 +1491,6 @@ var debugOn = false;
 			var pos1 = from.position();
 			var pos2 = to.position();
 			var aCanvas = $("#line-" + from.attr("id"));
-			// console.debug(new Date().getTime()+'moving - '+(new Date())+" -
-			// #line-" +
-			// from.attr("id") + "-" + to.attr("id"))
 			if (aCanvas.length == 1) {
 				if (propertyName) {
 					aCanvas.attr("data-propertyName-" + to.attr("id"), propertyName);
@@ -1570,13 +1542,12 @@ var debugOn = false;
 
 			var result = "<div></div>";
 			var jResult = $(result);
-			// destBox.append(jResult);
-
-			// estraggo i contenuti
 			var contents = [];
 			$.each(values, function(key, value) {
 				for (var akey in value) {
-					eval('contents.push({\'' + akey + '\':\'' + value[akey] + '\'})');
+					var _o = {};
+					_o[akey] = value[akey];
+					contents.push(_o);
 				}
 			});
 			if (debugOn) {
@@ -1593,12 +1564,16 @@ var debugOn = false;
 					// relative alle immagini ed ai link web
 					if (akey != 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type') {
 						if ($.inArray(akey, images) != -1) {
-							eval('connectedImages.push({\'' + akey + '\':\'' + value[akey] + '\'})');
+							var _o = {};
+							_o[akey] = value[akey];
+							connectedImages.push(_o);
 						} else if ($.inArray(akey, weblinks) != -1) {
-							eval('connectedWeblinks.push({\'' + akey + '\':\'' + value[akey] + '\'})');
+							var _o = {};
+							_o[akey] = value[akey];
+							connectedWeblinks.push(_o);
 						}
 					} else {
-						types.push(unescape(value[akey]));
+						types.push(decodeURIComponent(value[akey]));
 					}
 				}
 			});
@@ -1612,7 +1587,7 @@ var debugOn = false;
 				imagesj = $('<div class="section" style="height:80px"></div>');
 				$.each(connectedImages, function(key, value) {
 					for (var akey in value) {
-						imagesj.append("<a class=\"relatedImage\" href=\"" + unescape(value[akey]) + "\"><img src=\"" + unescape(value[akey]) + "\"/></a> ");
+						imagesj.append("<a class=\"relatedImage\" href=\"" + decodeURIComponent(value[akey]) + "\"><img src=\"" + decodeURIComponent(value[akey]) + "\"/></a> ");
 					}
 				});
 			}
@@ -1625,7 +1600,7 @@ var debugOn = false;
 				webLinkResult = "<div class=\"section\"><ul style=\"padding:0;margin:0;display:block;overflow:hidden;tex-overflow:ellipses\">";
 				$.each(connectedWeblinks, function(key, value) {
 					for (var akey in value) {
-						webLinkResult += "<li><a class=\"relatedLink\" target=\"_blank\" data-title=\"" + akey + " \n " + unescape(value[akey]) + "\" href=\"" + unescape(value[akey]) + "\">" + unescape(value[akey]) + "</a></li>";
+						webLinkResult += "<li><a class=\"relatedLink\" target=\"_blank\" data-title=\"" + akey + " \n " + decodeURIComponent(value[akey]) + "\" href=\"" + decodeURIComponent(value[akey]) + "\">" + decodeURIComponent(value[akey]) + "</a></li>";
 					}
 				});
 				webLinkResult += "</ul></div>";
@@ -1635,7 +1610,7 @@ var debugOn = false;
 				console.debug("formatDoc " + 4);
 			}
 			// aggiungo al box le informazioni descrittive della risorsa
-			var jContents = $('<div></div>');
+			var jContents = $('<div class="docContents"></div>');
 			var topSection = $('<div class="topSection sprite"><span>&#160;</span></div>');
 			jResult.append(topSection);
 			topSection.find('span').each(function() {
@@ -1712,7 +1687,7 @@ var debugOn = false;
 							if (filter == akey) {
 								var shortKey = label;
 								try {
-									var jSection = $("<div class=\"section\"><label data-title=\"" + akey + "\">" + shortKey + "</label><div>" + unescape(value[akey]) + "</div></div><div class=\"separ sprite\"></div>");
+									var jSection = $("<div class=\"section\"><label data-title=\"" + akey + "\">" + shortKey + "</label><div>" + decodeURIComponent(value[akey]) + "</div></div><div class=\"separ sprite\"></div>");
 									jSection.find('label').each(function() {
 										$(this).hover(function() {
 											methods.msg($(this).attr('data-title'), 'show');
@@ -1722,7 +1697,7 @@ var debugOn = false;
 									});
 									jContents.append(jSection);
 								} catch (e) {
-									// /console.debug(value[akey] + " --- " + shortKey);
+									console.error('format error:', e);
 								}
 								return true;
 							}
@@ -1745,7 +1720,7 @@ var debugOn = false;
 						}
 						try {
 
-							var jSection = $("<div class=\"section\"><label data-title=\"" + akey + "\">" + shortKey + "</label><div>" + unescape(value[akey]) + "</div></div><div class=\"separ sprite\"></div>");
+							var jSection = $("<div class=\"section\"><label data-title=\"" + akey + "\">" + shortKey + "</label><div>" + decodeURIComponent(value[akey]) + "</div></div><div class=\"separ sprite\"></div>");
 							jSection.find('label').each(function() {
 								$(this).hover(function() {
 									methods.msg($(this).attr('data-title'), 'show');
@@ -1755,7 +1730,7 @@ var debugOn = false;
 							});
 							jContents.append(jSection);
 						} catch (e) {
-							// /console.debug(value[akey] + " --- " + shortKey);
+							console.error('format error:', e);
 						}
 					}
 				});
@@ -1783,7 +1758,7 @@ var debugOn = false;
 								methods.msg(null, 'hide');
 							});
 						});
-						methods.resolveBnodes(unescape(value[akey]), URI, jBnode, jContents);
+						methods.resolveBnodes(decodeURIComponent(value[akey]), URI, jBnode, jContents);
 
 					}
 				});
@@ -1803,9 +1778,6 @@ var debugOn = false;
 
 			destBox.append(jResult);
 			destBox.append(jContents);
-			// destBox.append("<div class=\"separLast\"></div>");
-
-			// aggiungo le funzionalita' per la visualizzazione delle immagini
 			jContents.find(".relatedImage").each(function() {
 				$(this).fancybox({
 					'transitionIn' : 'elastic',
@@ -1819,7 +1791,7 @@ var debugOn = false;
 				});
 
 				$(this).find('img').each(function() {
-					$(this).load(function() {
+					$(this).on('load', function() {
 						if ($(this).width() > $(this).height()) {
 							$(this).height($(this).height() * 80 / $(this).width());
 							$(this).width(80);
@@ -1828,18 +1800,18 @@ var debugOn = false;
 							$(this).height(80);
 						}
 					});
-					$(this).error(function() {
+					$(this).on('error', function() {
 						$(this).attr("title", lang('noImage') + " \n" + $(this).attr("src"));
-						$(this).attr("src", "img/immagine-vuota-" + $.jStorage.get('selectedLanguage') + ".png");
+						$(this).attr("src", "img/immagine-vuota-" + lodliveStore.get('selectedLanguage') + ".png");
 					});
 				});
 			});
 			if (jContents.height() + 40 > $(window).height()) {
 				destBox.find("div.separ:last").remove();
 				destBox.find("div.separLast").remove();
-				jContents.slimScroll({
-					height : $(window).height() - 40,
-					color : '#fff'
+				jContents.css({
+					maxHeight : ($(window).height() - 40) + 'px',
+					overflowY : 'auto'
 				});
 			} else {
 				destBox.append("<div class=\"separLast\"></div>");
@@ -1890,14 +1862,12 @@ var debugOn = false;
 							methods.resolveBnodes(value.object.value, URI, destBox, jContents);
 						} else {
 							destBox.find('span[class=bnode]').append('<div><em title="' + value.property.value + '">' + shortKey + "</em>: " + value.object.value + '</div>');
-							// destBox.find('span[class=bnode]').attr("class",
-							// "");
 						}
 						jContents.append(destBox);
 						if (jContents.height() + 40 > $(window).height()) {
-							jContents.slimScroll({
-								height : $(window).height() - 40,
-								color : '#fff'
+							jContents.css({
+								maxHeight : ($(window).height() - 40) + 'px',
+								overflowY : 'auto'
 							});
 							jContents.parent().find("div.separLast").remove();
 						} else {
@@ -1933,22 +1903,21 @@ var debugOn = false;
 			if (docType == 'bnode') {
 				aClass = 'bnode';
 			}
-			// destBox.addClass(aClass);
 			if (aClass == null || aClass == 'standard' || aClass == '') {
-				if ($.jStorage.get('classMap')[docType]) {
-					aClass = $.jStorage.get('classMap')[docType];
+				if (lodliveStore.get('classMap')[docType]) {
+					aClass = lodliveStore.get('classMap')[docType];
 				} else {
-					var classMap = $.jStorage.get('classMap');
-					aClass = "box" + $.jStorage.get('classMap').counter;
-					if ($.jStorage.get('classMap').counter == 13) {
+					var classMap = lodliveStore.get('classMap');
+					aClass = "box" + lodliveStore.get('classMap').counter;
+					if (lodliveStore.get('classMap').counter == 13) {
 						classMap.counter = 1;
-						$.jStorage.set('classMap', classMap);
+						lodliveStore.set('classMap', classMap);
 					} else {
 						classMap.counter = classMap.counter + 1;
-						$.jStorage.set('classMap', classMap);
+						lodliveStore.set('classMap', classMap);
 					}
 					classMap[docType] = aClass;
-					$.jStorage.set('classMap', classMap);
+					lodliveStore.set('classMap', classMap);
 				}
 			}
 			containerBox.addClass(aClass);
@@ -1995,14 +1964,14 @@ var debugOn = false;
 			for (var a = 0; a < titles.length && maxTitles > 0; a++) {
 				var resultArray = methods.getJsonValue(values, titles[a], titles[a].indexOf('http') == 0 ? '' : titles[a]);
 				if (titles[a].indexOf('http') != 0) {
-					if (result.indexOf($.trim(unescape(titles[a])) + " \n") == -1) {
-						result += $.trim(unescape(titles[a])) + " \n";
+					if (result.indexOf(decodeURIComponent(titles[a]).trim() + " \n") == -1) {
+						result += decodeURIComponent(titles[a]).trim() + " \n";
 						maxTitles--;
 					}
 				} else {
 					for (var af = 0; af < resultArray.length; af++) {
-						if (result.indexOf(unescape(resultArray[af]) + " \n") == -1) {
-							result += unescape(resultArray[af]) + " \n";
+						if (result.indexOf(decodeURIComponent(resultArray[af]) + " \n") == -1) {
+							result += decodeURIComponent(resultArray[af]) + " \n";
 							maxTitles--;
 						}
 					}
@@ -2025,14 +1994,7 @@ var debugOn = false;
 			}
 			destBox.append(jResult);
 			if (!jResult.children().html() || jResult.children().html().indexOf(">") == -1) {
-				jResult.ThreeDots({
-					max_rows : 3
-				});
-			}
-			var el = jResult.find('.threedots_ellipsis');
-			if (el.length > 0) {
-				el.detach();
-				jResult.children('span').append(el);
+				jResult.children('.ellipsis_text').addClass('ellipsis_clamp');
 			}
 			var resourceTitle = jResult.text();
 			// posiziono il titolo al centro del box
@@ -2069,10 +2031,9 @@ var debugOn = false;
 						});
 					}
 					if ($.inArray(akey, images) > -1) {
-						eval('connectedImages.push({\'' + value[akey] + '\':\'' + escape(resourceTitle) + '\'})');
-						// to expand types } else if (akey !=
-						// 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' &&
-						// $.inArray(akey, weblinks) == -1) {
+						var _o = {};
+						_o[value[akey]] = encodeURIComponent(resourceTitle);
+						connectedImages.push(_o);
 					} else if ($.inArray(akey, weblinks) == -1) {
 						// controllo se trovo la stessa relazione in una
 						// proprieta' diversa
@@ -2081,13 +2042,17 @@ var debugOn = false;
 							$.each(connectedDocs, function(key2, value2) {
 								for (var akey2 in value2) {
 									if (value2[akey2] == value[akey]) {
-										eval('connectedDocs[' + aCounter + '] = {\'' + akey2 + ' | ' + akey + '\':\'' + value[akey] + '\'}');
+										var _o = {};
+										_o[akey2 + ' | ' + akey] = value[akey];
+										connectedDocs[aCounter] = _o;
 									}
 								}
 								aCounter++;
 							});
 						} else {
-							eval('connectedDocs.push({\'' + akey + '\':\'' + value[akey] + '\'})');
+							var _o = {};
+							_o[akey] = value[akey];
+							connectedDocs.push(_o);
 							sameDocControl.push(value[akey]);
 						}
 					}
@@ -2103,7 +2068,7 @@ var debugOn = false;
 						}
 						if (lodLiveProfile.uriSubstitutor) {
 							$.each(lodLiveProfile.uriSubstitutor, function(skey, svalue) {
-								value[akey] = value[akey].replace(escape(svalue.findStr), escape(svalue.replaceStr));
+								value[akey] = value[akey].replace(encodeURIComponent(svalue.findStr), encodeURIComponent(svalue.replaceStr));
 							});
 						}
 						// controllo se trovo la stessa relazione in una
@@ -2117,62 +2082,66 @@ var debugOn = false;
 										if (akey2 != akey) {
 											theKey = akey2 + ' | ' + akey;
 										}
-										eval('invertedDocs[' + aCounter + '] = {\'' + theKey + '\':\'' + value[akey] + '\'}');
+										var _o = {};
+										_o[theKey] = value[akey];
+										invertedDocs[aCounter] = _o;
 										return false;
 									}
 								}
 								aCounter++;
 							});
 						} else {
-							eval('invertedDocs.push({\'' + akey + '\':\'' + value[akey] + '\'})');
+							var _o = {};
+							_o[akey] = value[akey];
+							invertedDocs.push(_o);
 							sameDocControl.push(value[akey]);
 						}
 
 					}
 				});
 			}
-			if ($.jStorage.get('doDrawMap', true)) {
+			if (lodliveStore.get('doDrawMap', true)) {
 				for (var a = 0; a < points.length; a++) {
 					var resultArray = methods.getJsonValue(values, points[a], points[a]);
 					for (var af = 0; af < resultArray.length; af++) {
 						if (resultArray[af].indexOf(" ") != -1) {
-							eval('connectedLongs.push(\'' + unescape(resultArray[af].split(" ")[1]) + '\')');
-							eval('connectedLats.push(\'' + unescape(resultArray[af].split(" ")[0]) + '\')');
+							connectedLongs.push(decodeURIComponent(resultArray[af].split(" ")[1]));
+							connectedLats.push(decodeURIComponent(resultArray[af].split(" ")[0]));
 						} else if (resultArray[af].indexOf("-") != -1) {
-							eval('connectedLongs.push(\'' + unescape(resultArray[af].split("-")[1]) + '\')');
-							eval('connectedLats.push(\'' + unescape(resultArray[af].split("-")[0]) + '\')');
+							connectedLongs.push(decodeURIComponent(resultArray[af].split("-")[1]));
+							connectedLats.push(decodeURIComponent(resultArray[af].split("-")[0]));
 						}
 					}
 				}
 				for (var a = 0; a < longs.length; a++) {
 					var resultArray = methods.getJsonValue(values, longs[a], longs[a]);
 					for (var af = 0; af < resultArray.length; af++) {
-						eval('connectedLongs.push(\'' + unescape(resultArray[af]) + '\')');
+						connectedLongs.push(decodeURIComponent(resultArray[af]));
 					}
 				}
 				for (var a = 0; a < lats.length; a++) {
 					var resultArray = methods.getJsonValue(values, lats[a], lats[a]);
 					for (var af = 0; af < resultArray.length; af++) {
-						eval('connectedLats.push(\'' + unescape(resultArray[af]) + '\')');
+						connectedLats.push(decodeURIComponent(resultArray[af]));
 					}
 				}
 
 				if (connectedLongs.length > 0 && connectedLats.length > 0) {
-					var mapsMap = $.jStorage.get("mapsMap", {});
+					var mapsMap = lodliveStore.get("mapsMap", {});
 					mapsMap[containerBox.attr("id")] = {
 						longs : connectedLongs[0],
 						lats : connectedLats[0],
-						title : thisUri + "\n" + escape(resourceTitle)
+						title : thisUri + "\n" + encodeURIComponent(resourceTitle)
 					};
-					$.jStorage.set('mapsMap', mapsMap);
+					lodliveStore.set('mapsMap', mapsMap);
 					methods.updateMapPanel($('#controlPanel'));
 				}
 			}
-			if ($.jStorage.get('doCollectImages', true)) {
+			if (lodliveStore.get('doCollectImages', true)) {
 				if (connectedImages.length > 0) {
-					var imagesMap = $.jStorage.get("imagesMap", {});
+					var imagesMap = lodliveStore.get("imagesMap", {});
 					imagesMap[containerBox.attr("id")] = connectedImages;
-					$.jStorage.set('imagesMap', imagesMap);
+					lodliveStore.set('imagesMap', imagesMap);
 					methods.updateImagePanel($('#controlPanel'));
 				}
 			}
@@ -2218,12 +2187,6 @@ var debugOn = false;
 
 			// calcolo le parti in cui dividere il cerchio per posizionare i
 			// link
-			// var chordsList = this.lodlive('circleChords',
-			// destBox.width() / 2 + 12, ((totRelated > 1 ? totRelated - 1 :
-			// totRelated) * 2) + 4, destBox.position().left + destBox.width() /
-			// 2, destBox.position().top + destBox.height() / 2, totRelated +
-			// 4);
-
 			var chordsList = methods.circleChords(75, 24, destBox.position().left + 65, destBox.position().top + 65);
 			var chordsListGrouped = methods.circleChords(95, 36, destBox.position().left + 65, destBox.position().top + 65);
 			// aggiungo al box i link ai documenti correlati
@@ -2248,14 +2211,9 @@ var debugOn = false;
 						if (!inserted[akey]) {
 							innerCounter = 1;
 							inserted[akey] = true;
-							// var objBox = $("<div class=\"groupedRelatedBox
-							// sprite\" rel=\"" + MD5(akey) + "\" title=\"" +
-							// akey + "\" >" + (propertyGroup[akey].length) +
-							// "</div>");
 							var objBox = $("<div class=\"groupedRelatedBox sprite\" rel=\"" + MD5(akey) + "\"    data-title=\"" + akey + " \n " + (propertyGroup[akey].length) + " " + lang('connectedResources') + "\" ></div>");
-							// containerBox.append(objBox);
 							var akeyArray = akey.split(" ");
-							if (unescape(propertyGroup[akey][0]).indexOf('~~') != -1) {
+							if (decodeURIComponent(propertyGroup[akey][0]).indexOf('~~') != -1) {
 								objBox.addClass('isBnode');
 							} else {
 								for (var i = 0; i < akeyArray.length; i++) {
@@ -2266,32 +2224,19 @@ var debugOn = false;
 							}
 							objBox.attr('style', 'top:' + (chordsList[a][1] - 8) + 'px;left:' + (chordsList[a][0] - 8) + 'px');
 							objectList.push(objBox);
-							// containerBox.append('<div data-circlePos="' + a +
-							// '" class="showGroupedRelated ' + MD5(akey) +
-							// '"></div>');
 							a++;
 							counter++;
 						}
-						// var alredyInserted = $('.relatedBox',
-						// containerBox).length;
-						// if (alredyInserted <
-						// document.lodliveVars['relationsLimit']) {
 						if (innerCounter < 25) {
-							obj = $("<div class=\"aGrouped relatedBox sprite " + MD5(akey) + " " + MD5(unescape(value[akey])) + "\" rel=\"" + unescape(value[akey]) + "\"  data-title=\"" + akey + " \n " + unescape(value[akey]) + "\" ></div>");
-							// containerBox.append(obj);
+							obj = $("<div class=\"aGrouped relatedBox sprite " + MD5(akey) + " " + MD5(decodeURIComponent(value[akey])) + "\" rel=\"" + decodeURIComponent(value[akey]) + "\"  data-title=\"" + akey + " \n " + decodeURIComponent(value[akey]) + "\" ></div>");
 							obj.attr('style', 'display:none;position:absolute;top:' + (chordsListGrouped[innerCounter][1] - 8) + 'px;left:' + (chordsListGrouped[innerCounter][0] - 8) + 'px');
 							obj.attr("data-circlePos", innerCounter);
 							obj.attr("data-circleParts", 36);
 							obj.attr("data-circleId", containerBox.attr('id'));
 						}
-						/*
-						 * } else if (alredyInserted == document.lodliveVars['relationsLimit']) { $('.' + MD5(akey), containerBox).append('<span class="relatedBox" title="altri
-						 * elementi">[...]</span>'); }
-						 */
 						innerCounter++;
 					} else {
-						obj = $("<div class=\"relatedBox sprite " + MD5(unescape(value[akey])) + "\" rel=\"" + unescape(value[akey]) + "\"   data-title=\"" + akey + ' \n ' + unescape(value[akey]) + "\" ></div>");
-						// containerBox.append(obj);
+						obj = $("<div class=\"relatedBox sprite " + MD5(decodeURIComponent(value[akey])) + "\" rel=\"" + decodeURIComponent(value[akey]) + "\"   data-title=\"" + akey + ' \n ' + decodeURIComponent(value[akey]) + "\" ></div>");
 						obj.attr('style', 'top:' + (chordsList[a][1] - 8) + 'px;left:' + (chordsList[a][0] - 8) + 'px');
 						obj.attr("data-circlePos", a);
 						obj.attr("data-circleParts", 24);
@@ -2337,14 +2282,9 @@ var debugOn = false;
 						if (!inserted[akey]) {
 							innerCounter = 1;
 							inserted[akey] = true;
-							// var objBox = $("<div class=\"groupedRelatedBox
-							// sprite\" rel=\"" + MD5(akey) + "\" title=\"" +
-							// akey + "\" >" + (propertyGroup[akey].length) +
-							// "</div>");
 							var objBox = $("<div class=\"groupedRelatedBox sprite inverse\" rel=\"" + MD5(akey) + "-i\"   data-title=\"" + akey + " \n " + (propertyGroupInverted[akey].length) + " " + lang('connectedResources') + "\" ></div>");
-							// containerBox.append(objBox);
 							var akeyArray = akey.split(" ");
-							if (unescape(propertyGroupInverted[akey][0]).indexOf('~~') != -1) {
+							if (decodeURIComponent(propertyGroupInverted[akey][0]).indexOf('~~') != -1) {
 								objBox.addClass('isBnode');
 							} else {
 								for (var i = 0; i < akeyArray.length; i++) {
@@ -2354,34 +2294,21 @@ var debugOn = false;
 								}
 							}
 							objBox.attr('style', 'top:' + (chordsList[a][1] - 8) + 'px;left:' + (chordsList[a][0] - 8) + 'px');
-							// containerBox.append('<div data-circlePos="' + a +
-							// '" class="showGroupedRelated ' + MD5(akey) +
-							// '"></div>');
 							objectList.push(objBox);
 							a++;
 							counter++;
 						}
-						// var alredyInserted = $('.relatedBox',
-						// containerBox).length;
-						// if (alredyInserted <
-						// document.lodliveVars['relationsLimit']) {
 						if (innerCounter < 25) {
-							var destUri = unescape(value[akey].indexOf('~~') == 0 ? thisUri + value[akey] : value[akey]);
-							obj = $("<div class=\"aGrouped relatedBox sprite inverse " + MD5(akey) + "-i " + MD5(unescape(value[akey])) + " \" rel=\"" + destUri + "\"  data-title=\"" + akey + " \n " + unescape(value[akey]) + "\" ></div>");
-							// containerBox.append(obj);
+							var destUri = decodeURIComponent(value[akey].indexOf('~~') == 0 ? thisUri + value[akey] : value[akey]);
+							obj = $("<div class=\"aGrouped relatedBox sprite inverse " + MD5(akey) + "-i " + MD5(decodeURIComponent(value[akey])) + " \" rel=\"" + destUri + "\"  data-title=\"" + akey + " \n " + decodeURIComponent(value[akey]) + "\" ></div>");
 							obj.attr('style', 'display:none;position:absolute;top:' + (chordsListGrouped[innerCounter][1] - 8) + 'px;left:' + (chordsListGrouped[innerCounter][0] - 8) + 'px');
 							obj.attr("data-circlePos", innerCounter);
 							obj.attr("data-circleParts", 36);
 							obj.attr("data-circleId", containerBox.attr('id'));
 						}
-						/*
-						 * } else if (alredyInserted == document.lodliveVars['relationsLimit']) { $('.' + MD5(akey), containerBox).append('<span class="relatedBox" title="altri
-						 * elementi">[...]</span>'); }
-						 */
 						innerCounter++;
 					} else {
-						obj = $("<div class=\"relatedBox sprite inverse " + MD5(unescape(value[akey])) + "\" rel=\"" + unescape(value[akey]) + "\"   data-title=\"" + akey + ' \n ' + unescape(value[akey]) + "\" ></div>");
-						// containerBox.append(obj);
+						obj = $("<div class=\"relatedBox sprite inverse " + MD5(decodeURIComponent(value[akey])) + "\" rel=\"" + decodeURIComponent(value[akey]) + "\"   data-title=\"" + akey + ' \n ' + decodeURIComponent(value[akey]) + "\" ></div>");
 						obj.attr('style', 'top:' + (chordsList[a][1] - 8) + 'px;left:' + (chordsList[a][0] - 8) + 'px');
 						obj.attr("data-circlePos", a);
 						obj.attr("data-circleParts", 24);
@@ -2438,6 +2365,15 @@ var debugOn = false;
 				}
 			}
 			containerBox.children('.page1').fadeIn('fast');
+			containerBox.children('.page').children('.pager').each(function() {
+				$(this).attr('role', 'button').attr('tabindex', '0');
+				if ($(this).hasClass('pagePrev')) {
+					$(this).attr('aria-label', 'Previous page');
+				} else {
+					$(this).attr('aria-label', 'Next page');
+				}
+			});
+			makeKeyboardAccessible(containerBox.children('.page').children('.pager'));
 			containerBox.children('.page').children('.pager').click(function() {
 				var pager = $(this);
 				containerBox.find('.lastClick').removeClass('lastClick').click();
@@ -2445,8 +2381,9 @@ var debugOn = false;
 					$(this).parent().children('.' + pager.attr("data-page")).fadeIn('fast');
 				});
 			}); {
-				var obj = $("<div class=\"actionBox contents\" rel=\"contents\"  >&#160;</div>");
+				var obj = $("<div class=\"actionBox contents\" rel=\"contents\" role=\"button\" tabindex=\"0\" aria-label=\"View contents\">&#160;</div>");
 				containerBox.append(obj);
+				makeKeyboardAccessible(obj);
 				obj.hover(function() {
 					$(this).parent().children('.box').setBackgroundPosition({
 						y : -260
@@ -2456,8 +2393,9 @@ var debugOn = false;
 						y : 0
 					});
 				});
-				obj = $("<div class=\"actionBox tools\" rel=\"tools\" >&#160;</div>");
+				obj = $("<div class=\"actionBox tools\" rel=\"tools\" role=\"button\" tabindex=\"0\" aria-label=\"Tools\">&#160;</div>");
 				containerBox.append(obj);
+				makeKeyboardAccessible(obj);
 				obj.hover(function() {
 					$(this).parent().children('.box').setBackgroundPosition({
 						y : -130
@@ -2497,8 +2435,6 @@ var debugOn = false;
 				console.debug((new Date().getTime() - start) + '	circleChords ');
 			}
 			return values;
-			// console.debug(xValues)
-			// console.debug(yValues)
 		},
 		getJsonValue : function(map, key, defaultValue) {
 			if (debugOn) {
@@ -2508,11 +2444,11 @@ var debugOn = false;
 			$.each(map, function(skey, value) {
 				for (var akey in value) {
 					if (akey == key) {
-						returnVal.push(unescape(value[akey]));
+						returnVal.push(decodeURIComponent(value[akey]));
 					}
 				}
 			});
-			if (returnVal == []) {
+			if (returnVal.length === 0) {
 				returnVal = [defaultValue];
 			}
 			if (debugOn) {
@@ -2568,7 +2504,7 @@ var debugOn = false;
 				// attivo lo sparql interno basato su sesame
 				var res = getSparqlConf('documentUri', lodLiveProfile['default'], lodLiveProfile).replace(/\{URI\}/ig, resource);
 				var url = lodLiveProfile['default'].endpoint + "?uri=" + encodeURIComponent(resource) + "&query=" + encodeURIComponent(res);
-				if ($.jStorage.get('showInfoConsole')) {
+				if (lodliveStore.get('showInfoConsole')) {
 					methods.queryConsole('log', {
 						title : lang('endpointNotConfiguredSoInternal'),
 						text : res,
@@ -2587,10 +2523,14 @@ var debugOn = false;
 							conta++;
 							if (value.object.type == 'uri') {
 								if (value.object.value != resource) {
-									eval('uris.push({\'' + value['property']['value'] + '\':\'' + escape(value.object.value) + '\'})');
+									var _o = {};
+									_o[value['property']['value']] = encodeURIComponent(value.object.value);
+									uris.push(_o);
 								}
 							} else {
-								eval('values.push({\'' + value['property']['value'] + '\':\'' + escape(value.object.value) + '\'})');
+								var _o = {};
+								_o[value['property']['value']] = encodeURIComponent(value.object.value);
+								values.push(_o);
 							}
 						});
 						if (debugOn) {
@@ -2604,13 +2544,14 @@ var debugOn = false;
 								try {
 									$(fromInverse).click();
 								} catch (e) {
+									console.error('fromInverse click error:', e);
 								}
 							} : null);
-							if ($.jStorage.get('doAutoExpand')) {
+							if (lodliveStore.get('doAutoExpand')) {
 								methods.autoExpand(destBox);
 							}
 						};
-						if ($.jStorage.get('doAutoSameas')) {
+						if (lodliveStore.get('doAutoSameas')) {
 							var counter = 0;
 							var tot = 0;
 							$.each(lodLiveProfile.connection, function(key, value) {
@@ -2623,39 +2564,43 @@ var debugOn = false;
 
 					},
 					error : function(e, j, k) {
-						// console.debug(e);console.debug(j);
 						destBox.children('.box').html('');
 						var inverses = [];
 						if (fromInverse) {
-							eval('uris.push({\'' + fromInverse.replace(/div\[data-property="([^"]*)"\].*/, '$1') + '\':\'' + fromInverse.replace(/.*\[rel="([^"]*)"\].*/, '$1') + '\'})');
+							var _o = {};
+							_o[fromInverse.replace(/div\[data-property="([^"]*)"\].*/, '$1')] = fromInverse.replace(/.*\[rel="([^"]*)"\].*/, '$1');
+							uris.push(_o);
 						}
 						methods.format(destBox.children('.box'), values, uris, inverses);
 						methods.addClick(destBox, fromInverse ? function() {
 							try {
 								$(fromInverse).click();
 							} catch (e) {
+								console.error('fromInverse click error:', e);
 							}
 						} : null);
-						if ($.jStorage.get('doAutoExpand')) {
+						if (lodliveStore.get('doAutoExpand')) {
 							methods.autoExpand(destBox);
 						}
 					}
 				});
 			} else {
-				// console.debug(e);console.debug(j);
 				destBox.children('.box').html('');
 				var inverses = [];
 				if (fromInverse) {
-					eval('uris.push({\'' + fromInverse.replace(/div\[data-property="([^"]*)"\].*/, '$1') + '\':\'' + fromInverse.replace(/.*\[rel="([^"]*)"\].*/, '$1') + '\'})');
+					var _o = {};
+					_o[fromInverse.replace(/div\[data-property="([^"]*)"\].*/, '$1')] = fromInverse.replace(/.*\[rel="([^"]*)"\].*/, '$1');
+					uris.push(_o);
 				}
 				methods.format(destBox.children('.box'), values, uris, inverses);
 				methods.addClick(destBox, fromInverse ? function() {
 					try {
 						$(fromInverse).click();
 					} catch (e) {
+						console.error('fromInverse click error:', e);
 					}
 				} : null);
-				if ($.jStorage.get('doAutoExpand')) {
+				if (lodliveStore.get('doAutoExpand')) {
 					methods.autoExpand(destBox);
 				}
 			}
@@ -2667,7 +2612,7 @@ var debugOn = false;
 
 			var uris = [];
 			var values = [];
-			if ($.jStorage.get('showInfoConsole')) {
+			if (lodliveStore.get('showInfoConsole')) {
 				methods.queryConsole('init', {
 					uriId : anUri
 				});
@@ -2677,9 +2622,6 @@ var debugOn = false;
 				});
 			}
 			SPARQLquery = methods.composeQuery(anUri, 'documentUri');
-			if ($.jStorage.get('doStats')) {
-				methods.doStats(anUri);
-			}
 			if (SPARQLquery.indexOf("endpoint=") != -1) {
 				var endpoint = SPARQLquery.substring(SPARQLquery.indexOf("endpoint=") + 9);
 				endpoint = endpoint.substring(0, endpoint.indexOf("&"));
@@ -2703,28 +2645,29 @@ var debugOn = false;
 					},
 					success : function(json) {
 						json = json['results']['bindings'];
-						// var tot = json.length;
 						var conta = 0;
-						// var aSpan = $('<span style="color:#000"><br />gg0/' +
-						// tot + '</span>');
-						// destBox.children('.box').append(aSpan);
-						// var control = {};
 						$.each(json, function(key, value) {
 							conta++;
 							if (value.object.type == 'uri' || value.object.type == 'bnode') {
 								if (value.object.value != anUri) {
 									if (value.object.type == 'bnode') {
-										eval('uris.push({\'' + value['property']['value'] + '\':\'' + escape(anUri + '~~' + value.object.value) + '\'})');
+										var _o = {};
+										_o[value['property']['value']] = encodeURIComponent(anUri + '~~' + value.object.value);
+										uris.push(_o);
 									} else {
-										eval('uris.push({\'' + value['property']['value'] + '\':\'' + escape(value.object.value) + '\'})');
+										var _o = {};
+										_o[value['property']['value']] = encodeURIComponent(value.object.value);
+										uris.push(_o);
 									}
 								}
 							} else {
-								eval('values.push({\'' + value['property']['value'] + '\':\'' + escape(value.object.value) + '\'})');
+								var _o = {};
+								_o[value['property']['value']] = encodeURIComponent(value.object.value);
+								values.push(_o);
 							}
 
 						});
-						if ($.jStorage.get('showInfoConsole')) {
+						if (lodliveStore.get('showInfoConsole')) {
 							methods.queryConsole('log', {
 								founded : conta,
 								id : SPARQLquery,
@@ -2735,7 +2678,7 @@ var debugOn = false;
 							console.debug((new Date().getTime() - start) + '	openDoc eval uris & values');
 						}
 						destBox.children('.box').html('');
-						if ($.jStorage.get('doInverse')) {
+						if (lodliveStore.get('doInverse')) {
 							SPARQLquery = methods.composeQuery(anUri, 'inverse');
 
 							var inverses = [];
@@ -2748,17 +2691,14 @@ var debugOn = false;
 								success : function(json) {
 									json = json['results']['bindings'];
 									var conta = 0;
-									// var tot = json.length;
-									// var aSpan = $('<span
-									// style="color:#000"><br />0/' + tot +
-									// '</span>');
-									// destBox.children('.box').append(aSpan);
 									$.each(json, function(key, value) {
 										conta++;
-										eval('inverses.push({\'' + value['property']['value'] + '\':\'' + (value.object.type == 'bnode' ? anUri + '~~' : '') + escape(value.object.value) + '\'})');
+										var _o = {};
+										_o[value['property']['value']] = (value.object.type == 'bnode' ? anUri + '~~' : '') + encodeURIComponent(value.object.value);
+										inverses.push(_o);
 										// aSpan.text(conta + '/' + tot);
 									});
-									if ($.jStorage.get('showInfoConsole')) {
+									if (lodliveStore.get('showInfoConsole')) {
 										methods.queryConsole('log', {
 											founded : conta,
 											id : SPARQLquery,
@@ -2775,13 +2715,14 @@ var debugOn = false;
 											try {
 												$(fromInverse).click();
 											} catch (e) {
+												console.error('fromInverse click error:', e);
 											}
 										} : null);
-										if ($.jStorage.get('doAutoExpand')) {
+										if (lodliveStore.get('doAutoExpand')) {
 											methods.autoExpand(destBox);
 										}
 									};
-									if ($.jStorage.get('doAutoSameas')) {
+									if (lodliveStore.get('doAutoSameas')) {
 										var counter = 0;
 										var tot = 0;
 										$.each(lodLiveProfile.connection, function(key, value) {
@@ -2796,7 +2737,7 @@ var debugOn = false;
 								error : function(e, b, v) {
 									destBox.children('.box').html('');
 									methods.format(destBox.children('.box'), values, uris);
-									if ($.jStorage.get('showInfoConsole')) {
+									if (lodliveStore.get('showInfoConsole')) {
 										methods.queryConsole('log', {
 											error : 'error',
 											id : SPARQLquery,
@@ -2807,9 +2748,10 @@ var debugOn = false;
 										try {
 											$(fromInverse).click();
 										} catch (e) {
+											console.error('fromInverse click error:', e);
 										}
 									} : null);
-									if ($.jStorage.get('doAutoExpand')) {
+									if (lodliveStore.get('doAutoExpand')) {
 										methods.autoExpand(destBox);
 									}
 								}
@@ -2820,9 +2762,10 @@ var debugOn = false;
 								try {
 									$(fromInverse).click();
 								} catch (e) {
+									console.error('fromInverse click error:', e);
 								}
 							} : null);
-							if ($.jStorage.get('doAutoExpand')) {
+							if (lodliveStore.get('doAutoExpand')) {
 								methods.autoExpand(destBox);
 							}
 						}
@@ -2923,15 +2866,15 @@ var debugOn = false;
 						}
 						return false;
 					}
-					var SPARQLquery = value.endpoint + "?" + (value.endpointType ? $.jStorage.get('endpoints')[value.endpointType] : $.jStorage.get('endpoints')['all']) + "&query=" + escape(getSparqlConf('inverseSameAs', value, lodLiveProfile).replace(/\{URI\}/g, anUri));
+					var SPARQLquery = value.endpoint + "?" + (value.endpointType ? lodliveStore.get('endpoints')[value.endpointType] : lodliveStore.get('endpoints')['all']) + "&query=" + encodeURIComponent(getSparqlConf('inverseSameAs', value, lodLiveProfile).replace(/\{URI\}/g, anUri));
 					if (value.proxy) {
-						SPARQLquery = value.proxy + '?endpoint=' + value.endpoint + "&" + (value.endpointType ? $.jStorage.get('endpoints')[value.endpointType] : $.jStorage.get('endpoints')['all']) + "&query=" + escape(getSparqlConf('inverseSameAs', value, lodLiveProfile).replace(/\{URI\}/g, anUri));
+						SPARQLquery = value.proxy + '?endpoint=' + value.endpoint + "&" + (value.endpointType ? lodliveStore.get('endpoints')[value.endpointType] : lodliveStore.get('endpoints')['all']) + "&query=" + encodeURIComponent(getSparqlConf('inverseSameAs', value, lodLiveProfile).replace(/\{URI\}/g, anUri));
 					}
 					$.jsonp({
 						url : SPARQLquery,
 						timeout : 3000,
 						beforeSend : function() {
-							if ($.jStorage.get('showInfoConsole')) {
+							if (lodliveStore.get('showInfoConsole')) {
 								methods.queryConsole('log', {
 									title : value.endpoint,
 									text : getSparqlConf('inverseSameAs', value, lodLiveProfile).replace(/\{URI\}/g, anUri),
@@ -2946,12 +2889,16 @@ var debugOn = false;
 							$.each(json, function(key, value) {
 								conta++;
 								if (value.property && value.property.value) {
-									eval('inverse.splice(1,0,{\'' + value.property.value + '\':\'' + escape(value.object.value) + '\'})');
+									var _o = {};
+									_o[value.property.value] = encodeURIComponent(value.object.value);
+									inverse.splice(1,0,_o);
 								} else {
-									eval('inverse.splice(1,0,{\'' + 'http://www.w3.org/2002/07/owl#sameAs' + '\':\'' + escape(value.object.value) + '\'})');
+									var _o = {};
+									_o['http://www.w3.org/2002/07/owl#sameAs'] = encodeURIComponent(value.object.value);
+									inverse.splice(1,0,_o);
 								}
 							});
-							if ($.jStorage.get('showInfoConsole')) {
+							if (lodliveStore.get('showInfoConsole')) {
 								methods.queryConsole('log', {
 									founded : conta,
 									id : SPARQLquery,
@@ -2966,7 +2913,7 @@ var debugOn = false;
 							}
 						},
 						error : function(e, b, v) {
-							if ($.jStorage.get('showInfoConsole')) {
+							if (lodliveStore.get('showInfoConsole')) {
 								methods.queryConsole('log', {
 									error : 'error',
 									id : SPARQLquery,
@@ -2999,9 +2946,9 @@ var debugOn = false;
 				var keySplit = key.split(",");
 				for (var a = 0; a < keySplit.length; a++) {
 					if (SPARQLquery.indexOf(keySplit[a]) != -1) {
-						SPARQLquery = value.endpoint + "?" + (value.endpointType ? $.jStorage.get('endpoints')[value.endpointType] : $.jStorage.get('endpoints')['all']) + "&query=" + escape(getSparqlConf('findSubject', value, lodLiveProfile).replace(/\{CLASS\}/g, selectedClass).replace(/\{VALUE\}/g, selectedValue));
+						SPARQLquery = value.endpoint + "?" + (value.endpointType ? lodliveStore.get('endpoints')[value.endpointType] : lodliveStore.get('endpoints')['all']) + "&query=" + encodeURIComponent(getSparqlConf('findSubject', value, lodLiveProfile).replace(/\{CLASS\}/g, selectedClass).replace(/\{VALUE\}/g, selectedValue));
 						if (value.proxy) {
-							SPARQLquery = value.proxy + "?endpoint=" + value.endpoint + "&" + (value.endpointType ? $.jStorage.get('endpoints')[value.endpointType] : $.jStorage.get('endpoints')['all']) + "&query=" + escape(getSparqlConf('findSubject', value, lodLiveProfile).replace(/\{CLASS\}/g, selectedClass).replace(/\{VALUE\}/g, selectedValue));
+							SPARQLquery = value.proxy + "?endpoint=" + value.endpoint + "&" + (value.endpointType ? lodliveStore.get('endpoints')[value.endpointType] : lodliveStore.get('endpoints')['all']) + "&query=" + encodeURIComponent(getSparqlConf('findSubject', value, lodLiveProfile).replace(/\{CLASS\}/g, selectedClass).replace(/\{VALUE\}/g, selectedValue));
 						}
 					}
 				}
@@ -3019,7 +2966,6 @@ var debugOn = false;
 						values.push(json[key].subject.value);
 					});
 					for (var i = 0; i < values.length; i++) {
-						// console.debug(destInput)
 						destInput.val(values[i]);
 					}
 				},
@@ -3059,7 +3005,7 @@ var debugOn = false;
 					y : (y1 + y1) / 2
 				});
 			}
-			label = $.trim(label).replace(/\n/g, ', ');
+			label = label.trim().replace(/\n/g, ', ');
 			canvas.drawText({// inserisco l'etichetta
 				fillStyle : "#606060",
 				strokeStyle : "#606060",
@@ -3115,4 +3061,4 @@ var debugOn = false;
 		}
 	};
 
-})(jQuery, $.jStorage.get('profile'));
+})(jQuery, lodliveStore.get('profile'));

@@ -1,0 +1,264 @@
+@prefix ldont: <http://localdata/ontology/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix geo: <http://www.w3.org/2003/01/geo/wgs84_pos#> .
+
+# Ontology definitions
+ldont:Country a owl:Class ;
+    rdfs:label "Country"@en ;
+    rdfs:comment "A sovereign nation or state"@en .
+
+ldont:City a owl:Class ;
+    rdfs:label "City"@en ;
+    rdfs:comment "A large human settlement"@en .
+
+ldont:Person a owl:Class ;
+    rdfs:label "Person"@en ;
+    rdfs:comment "A human being"@en .
+
+ldont:Organisation a owl:Class ;
+    rdfs:label "Organisation"@en ;
+    rdfs:comment "A structured group of people"@en .
+
+ldont:Project a owl:Class ;
+    rdfs:label "Project"@en ;
+    rdfs:comment "A planned undertaking"@en .
+
+ldont:capitalOf a owl:ObjectProperty ;
+    rdfs:label "capital of"@en ;
+    rdfs:domain ldont:City ;
+    rdfs:range ldont:Country .
+
+ldont:locatedIn a owl:ObjectProperty ;
+    rdfs:label "located in"@en ;
+    rdfs:domain ldont:City ;
+    rdfs:range ldont:Country .
+
+ldont:population a owl:DatatypeProperty ;
+    rdfs:label "population"@en ;
+    rdfs:range xsd:integer .
+
+ldont:foundedYear a owl:DatatypeProperty ;
+    rdfs:label "founded year"@en ;
+    rdfs:range xsd:integer .
+
+ldont:worksFor a owl:ObjectProperty ;
+    rdfs:label "works for"@en ;
+    rdfs:domain ldont:Person ;
+    rdfs:range ldont:Organisation .
+
+ldont:headquarteredIn a owl:ObjectProperty ;
+    rdfs:label "headquartered in"@en ;
+    rdfs:domain ldont:Organisation ;
+    rdfs:range ldont:City .
+
+ldont:involvedIn a owl:ObjectProperty ;
+    rdfs:label "involved in"@en ;
+    rdfs:domain ldont:Person ;
+    rdfs:range ldont:Project .
+
+ldont:relatedTo a owl:ObjectProperty ;
+    rdfs:label "related to"@en .
+
+# Countries
+<http://localdata/country/ireland> a ldont:Country ;
+    rdfs:label "Ireland"@en ;
+    rdfs:label "Éire"@ga ;
+    dc:title "Ireland" ;
+    ldont:population 5123536 ;
+    foaf:page <https://en.wikipedia.org/wiki/Republic_of_Ireland> ;
+    owl:sameAs <http://dbpedia.org/resource/Republic_of_Ireland> .
+
+<http://localdata/country/france> a ldont:Country ;
+    rdfs:label "France"@en ;
+    rdfs:label "France"@fr ;
+    dc:title "France" ;
+    ldont:population 67750000 ;
+    foaf:page <https://en.wikipedia.org/wiki/France> ;
+    owl:sameAs <http://dbpedia.org/resource/France> .
+
+<http://localdata/country/germany> a ldont:Country ;
+    rdfs:label "Germany"@en ;
+    rdfs:label "Deutschland"@de ;
+    dc:title "Germany" ;
+    ldont:population 84482000 ;
+    foaf:page <https://en.wikipedia.org/wiki/Germany> ;
+    owl:sameAs <http://dbpedia.org/resource/Germany> .
+
+<http://localdata/country/spain> a ldont:Country ;
+    rdfs:label "Spain"@en ;
+    rdfs:label "España"@es ;
+    dc:title "Spain" ;
+    ldont:population 47780000 ;
+    owl:sameAs <http://dbpedia.org/resource/Spain> .
+
+<http://localdata/country/italy> a ldont:Country ;
+    rdfs:label "Italy"@en ;
+    rdfs:label "Italia"@it ;
+    dc:title "Italy" ;
+    ldont:population 58850000 ;
+    owl:sameAs <http://dbpedia.org/resource/Italy> .
+
+# Cities
+<http://localdata/city/dublin> a ldont:City ;
+    rdfs:label "Dublin"@en ;
+    rdfs:label "Baile Átha Cliath"@ga ;
+    dc:title "Dublin" ;
+    ldont:capitalOf <http://localdata/country/ireland> ;
+    ldont:locatedIn <http://localdata/country/ireland> ;
+    ldont:population 1263219 ;
+    ldont:foundedYear 841 ;
+    geo:lat "53.3498"^^xsd:float ;
+    geo:long "-6.2603"^^xsd:float ;
+    owl:sameAs <http://dbpedia.org/resource/Dublin> .
+
+<http://localdata/city/paris> a ldont:City ;
+    rdfs:label "Paris"@en ;
+    dc:title "Paris" ;
+    ldont:capitalOf <http://localdata/country/france> ;
+    ldont:locatedIn <http://localdata/country/france> ;
+    ldont:population 2161000 ;
+    geo:lat "48.8566"^^xsd:float ;
+    geo:long "2.3522"^^xsd:float ;
+    owl:sameAs <http://dbpedia.org/resource/Paris> .
+
+<http://localdata/city/berlin> a ldont:City ;
+    rdfs:label "Berlin"@en ;
+    dc:title "Berlin" ;
+    ldont:capitalOf <http://localdata/country/germany> ;
+    ldont:locatedIn <http://localdata/country/germany> ;
+    ldont:population 3748148 ;
+    geo:lat "52.5200"^^xsd:float ;
+    geo:long "13.4050"^^xsd:float ;
+    owl:sameAs <http://dbpedia.org/resource/Berlin> .
+
+<http://localdata/city/cork> a ldont:City ;
+    rdfs:label "Cork"@en ;
+    rdfs:label "Corcaigh"@ga ;
+    dc:title "Cork" ;
+    ldont:locatedIn <http://localdata/country/ireland> ;
+    ldont:population 222333 ;
+    geo:lat "51.8969"^^xsd:float ;
+    geo:long "-8.4863"^^xsd:float .
+
+<http://localdata/city/galway> a ldont:City ;
+    rdfs:label "Galway"@en ;
+    rdfs:label "Gaillimh"@ga ;
+    dc:title "Galway" ;
+    ldont:locatedIn <http://localdata/country/ireland> ;
+    ldont:population 83456 ;
+    geo:lat "53.2707"^^xsd:float ;
+    geo:long "-9.0568"^^xsd:float .
+
+<http://localdata/city/madrid> a ldont:City ;
+    rdfs:label "Madrid"@en ;
+    dc:title "Madrid" ;
+    ldont:capitalOf <http://localdata/country/spain> ;
+    ldont:locatedIn <http://localdata/country/spain> ;
+    ldont:population 3223334 ;
+    geo:lat "40.4168"^^xsd:float ;
+    geo:long "-3.7038"^^xsd:float ;
+    owl:sameAs <http://dbpedia.org/resource/Madrid> .
+
+<http://localdata/city/rome> a ldont:City ;
+    rdfs:label "Rome"@en ;
+    rdfs:label "Roma"@it ;
+    dc:title "Rome" ;
+    ldont:capitalOf <http://localdata/country/italy> ;
+    ldont:locatedIn <http://localdata/country/italy> ;
+    ldont:population 2873000 ;
+    geo:lat "41.9028"^^xsd:float ;
+    geo:long "12.4964"^^xsd:float ;
+    owl:sameAs <http://dbpedia.org/resource/Rome> .
+
+# Organisations
+<http://localdata/org/acme-tech> a ldont:Organisation ;
+    rdfs:label "Acme Technologies"@en ;
+    dc:title "Acme Technologies" ;
+    ldont:headquarteredIn <http://localdata/city/dublin> ;
+    ldont:foundedYear 2005 ;
+    foaf:homepage <https://example.com/acme> .
+
+<http://localdata/org/euro-research> a ldont:Organisation ;
+    rdfs:label "European Research Group"@en ;
+    dc:title "European Research Group" ;
+    ldont:headquarteredIn <http://localdata/city/paris> ;
+    ldont:foundedYear 1998 .
+
+<http://localdata/org/data-analytics-gmbh> a ldont:Organisation ;
+    rdfs:label "Data Analytics GmbH"@en ;
+    dc:title "Data Analytics GmbH" ;
+    ldont:headquarteredIn <http://localdata/city/berlin> ;
+    ldont:foundedYear 2012 .
+
+# People
+<http://localdata/person/alice> a ldont:Person, foaf:Person ;
+    rdfs:label "Alice Murphy"@en ;
+    dc:title "Alice Murphy" ;
+    foaf:firstName "Alice" ;
+    foaf:lastName "Murphy" ;
+    foaf:name "Alice Murphy" ;
+    ldont:worksFor <http://localdata/org/acme-tech> ;
+    ldont:involvedIn <http://localdata/project/linked-cities> ;
+    ldont:relatedTo <http://localdata/person/bob> .
+
+<http://localdata/person/bob> a ldont:Person, foaf:Person ;
+    rdfs:label "Bob Dupont"@en ;
+    dc:title "Bob Dupont" ;
+    foaf:firstName "Bob" ;
+    foaf:lastName "Dupont" ;
+    foaf:name "Bob Dupont" ;
+    ldont:worksFor <http://localdata/org/euro-research> ;
+    ldont:involvedIn <http://localdata/project/linked-cities> ;
+    ldont:involvedIn <http://localdata/project/open-data-eu> ;
+    ldont:relatedTo <http://localdata/person/alice> .
+
+<http://localdata/person/clara> a ldont:Person, foaf:Person ;
+    rdfs:label "Clara Schmidt"@en ;
+    dc:title "Clara Schmidt" ;
+    foaf:firstName "Clara" ;
+    foaf:lastName "Schmidt" ;
+    foaf:name "Clara Schmidt" ;
+    ldont:worksFor <http://localdata/org/data-analytics-gmbh> ;
+    ldont:involvedIn <http://localdata/project/open-data-eu> .
+
+<http://localdata/person/declan> a ldont:Person, foaf:Person ;
+    rdfs:label "Declan O'Brien"@en ;
+    dc:title "Declan O'Brien" ;
+    foaf:firstName "Declan" ;
+    foaf:lastName "O'Brien" ;
+    foaf:name "Declan O'Brien" ;
+    ldont:worksFor <http://localdata/org/acme-tech> ;
+    ldont:involvedIn <http://localdata/project/semantic-ireland> .
+
+# Projects
+<http://localdata/project/linked-cities> a ldont:Project ;
+    rdfs:label "Linked Cities Initiative"@en ;
+    dc:title "Linked Cities Initiative" ;
+    dct:description "A project to interlink open data from European capital cities"@en ;
+    ldont:relatedTo <http://localdata/city/dublin> ;
+    ldont:relatedTo <http://localdata/city/paris> ;
+    ldont:relatedTo <http://localdata/city/berlin> .
+
+<http://localdata/project/open-data-eu> a ldont:Project ;
+    rdfs:label "Open Data Europe"@en ;
+    dc:title "Open Data Europe" ;
+    dct:description "Pan-European open data publishing and linking initiative"@en ;
+    ldont:relatedTo <http://localdata/country/france> ;
+    ldont:relatedTo <http://localdata/country/germany> ;
+    ldont:relatedTo <http://localdata/country/ireland> .
+
+<http://localdata/project/semantic-ireland> a ldont:Project ;
+    rdfs:label "Semantic Ireland"@en ;
+    dc:title "Semantic Ireland" ;
+    dct:description "Linking Irish public sector data using semantic web technologies"@en ;
+    ldont:relatedTo <http://localdata/country/ireland> ;
+    ldont:relatedTo <http://localdata/city/dublin> ;
+    ldont:relatedTo <http://localdata/city/cork> ;
+    ldont:relatedTo <http://localdata/city/galway> .

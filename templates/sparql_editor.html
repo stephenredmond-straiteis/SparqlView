@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPARQL Query Editor</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            padding: 20px;
+        }
+        h1 {
+            font-size: 1.4em;
+            margin-bottom: 16px;
+            color: #1a1a2e;
+        }
+        .editor-container {
+            max-width: 960px;
+            margin: 0 auto;
+        }
+        .prefixes {
+            background: #e8ecf0;
+            border: 1px solid #ccc;
+            border-bottom: none;
+            border-radius: 6px 6px 0 0;
+            padding: 10px 14px;
+            font-family: "Consolas", "Monaco", "Courier New", monospace;
+            font-size: 12px;
+            color: #666;
+            cursor: pointer;
+            user-select: none;
+        }
+        .prefixes.collapsed .prefix-lines { display: none; }
+        .prefixes .toggle { font-weight: bold; margin-bottom: 4px; }
+        .prefix-lines { margin-top: 4px; white-space: pre; }
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 14px;
+            font-family: "Consolas", "Monaco", "Courier New", monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            border: 1px solid #ccc;
+            border-radius: 0 0 6px 6px;
+            resize: vertical;
+            outline: none;
+        }
+        textarea:focus { border-color: #4a90d9; box-shadow: 0 0 0 2px rgba(74,144,217,0.2); }
+        .controls {
+            margin-top: 12px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        button {
+            padding: 10px 28px;
+            background: #1a1a2e;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        button:hover { background: #16213e; }
+        select {
+            padding: 8px 12px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        label { font-size: 14px; color: #555; }
+        .examples {
+            margin-top: 20px;
+            padding: 14px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+        .examples h2 { font-size: 1em; margin-bottom: 8px; color: #555; }
+        .examples a {
+            display: inline-block;
+            margin: 4px 8px 4px 0;
+            color: #4a90d9;
+            text-decoration: none;
+            font-size: 13px;
+        }
+        .examples a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="editor-container">
+        <h1>SPARQL Query Editor</h1>
+        <div class="prefixes collapsed" onclick="this.classList.toggle('collapsed')">
+            <div class="toggle">Prefixes (click to expand)</div>
+            <div class="prefix-lines">PREFIX ld:    &lt;http://localdata/&gt;
+PREFIX ldont: &lt;http://localdata/ontology/&gt;
+PREFIX rdf:   &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#&gt;
+PREFIX rdfs:  &lt;http://www.w3.org/2000/01/rdf-schema#&gt;
+PREFIX owl:   &lt;http://www.w3.org/2002/07/owl#&gt;
+PREFIX foaf:  &lt;http://xmlns.com/foaf/0.1/&gt;
+PREFIX dc:    &lt;http://purl.org/dc/elements/1.1/&gt;
+PREFIX dct:   &lt;http://purl.org/dc/terms/&gt;
+PREFIX xsd:   &lt;http://www.w3.org/2001/XMLSchema#&gt;
+PREFIX geo:   &lt;http://www.w3.org/2003/01/geo/wgs84_pos#&gt;</div>
+        </div>
+        <form id="queryForm" method="get" action="/sparql">
+            <textarea id="query" name="query" spellcheck="false">SELECT DISTINCT ?subject ?label
+WHERE {
+  ?subject a ?type ;
+           rdfs:label ?label .
+}
+ORDER BY ?subject
+LIMIT 50</textarea>
+            <div class="controls">
+                <button type="submit">Run Query</button>
+                <label for="format">Result format:</label>
+                <select id="format" name="format">
+                    <option value="application/sparql-results+json">JSON</option>
+                    <option value="application/sparql-results+xml">XML</option>
+                    <option value="text/csv">CSV</option>
+                    <option value="text/tab-separated-values">TSV</option>
+                    <option value="application/rdf+xml">RDF/XML</option>
+                    <option value="text/turtle">Turtle</option>
+                </select>
+            </div>
+        </form>
+        <div class="examples">
+            <h2>Example Queries</h2>
+            <a href="#" onclick="setQuery('SELECT DISTINCT ?class\nWHERE {\n  ?s a ?class .\n}\nORDER BY ?class'); return false;">All classes</a>
+            <a href="#" onclick="setQuery('SELECT ?city ?label ?pop\nWHERE {\n  ?city a &lt;http://localdata/ontology/City&gt; ;\n        rdfs:label ?label ;\n        &lt;http://localdata/ontology/population&gt; ?pop .\n}\nORDER BY DESC(?pop)'); return false;">Cities by population</a>
+            <a href="#" onclick="setQuery('SELECT ?person ?name ?org ?orgName\nWHERE {\n  ?person a &lt;http://localdata/ontology/Person&gt; ;\n          foaf:name ?name ;\n          &lt;http://localdata/ontology/worksFor&gt; ?org .\n  ?org rdfs:label ?orgName .\n}'); return false;">People and organisations</a>
+            <a href="#" onclick="setQuery('SELECT ?capital ?capitalLabel ?country ?countryLabel\nWHERE {\n  ?capital &lt;http://localdata/ontology/capitalOf&gt; ?country ;\n           rdfs:label ?capitalLabel .\n  ?country rdfs:label ?countryLabel .\n  FILTER(lang(?capitalLabel) = \"en\")\n  FILTER(lang(?countryLabel) = \"en\")\n}'); return false;">Capital cities</a>
+            <a href="#" onclick="setQuery('DESCRIBE &lt;http://localdata/city/dublin&gt;'); return false;">Describe Dublin</a>
+            <a href="#" onclick="setQuery('CONSTRUCT {\n  ?city rdfs:label ?label ;\n        geo:lat ?lat ;\n        geo:long ?long .\n}\nWHERE {\n  ?city a &lt;http://localdata/ontology/City&gt; ;\n        rdfs:label ?label ;\n        geo:lat ?lat ;\n        geo:long ?long .\n  FILTER(lang(?label) = \"en\")\n}'); return false;">Construct city locations</a>
+        </div>
+    </div>
+    <script>
+        function setQuery(q) {
+            document.getElementById('query').value = q.replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+        }
+    </script>
+</body>
+</html>

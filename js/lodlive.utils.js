@@ -1,11 +1,11 @@
 // a causa di un baco di opera e firefox implmento una funzione apposita per
 // settare la posizione dei background
 $.fn.setBackgroundPosition = function(pos) {
-	var backPos = $.trim(this.css('background-position'));
+	var backPos = this.css('background-position').trim();
 	var hasString = backPos.indexOf('left') == -1 ? false : true;
 	//added fix for chrome 25
 	backPos = backPos.replace(/top/gi, '').replace(/left/gi, '');
-	backPos = $.trim(backPos.replace(/  /g, ' '));
+	backPos = backPos.replace(/  /g, ' ').trim();
 
 	try {
 		var backPosArray = backPos.split(" ");
@@ -266,7 +266,7 @@ var MD5 = function(string) {
 };
 
 function lang(obj) {
-	return $.jStorage.get('language')[$.jStorage.get('selectedLanguage')][obj];
+	return lodliveStore.get('language')[lodliveStore.get('selectedLanguage')][obj];
 }
 
 function breakLines(msg) {

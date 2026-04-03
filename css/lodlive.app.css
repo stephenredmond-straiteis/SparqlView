@@ -211,12 +211,12 @@ div#boxesCont {
 	box-shadow: 0 6px 6px -5px rgba(0, 0, 0, 0.5);
 }
 
-.slimScrollDiv {
+.selectionList {
 	background: #fff;
 	width: 260px;
 	color: #575757;
 	border-top: 2px solid #e3e3e3;
-	overflow: hidden;
+	overflow-y: auto;
 	-moz-box-shadow: 0 6px 6px -5px rgba(0, 0, 0, 0.5);
 	-webkit-box-shadow: 0 6px 6px -5px rgba(0, 0, 0, 0.5);
 	box-shadow: 0 6px 6px -5px rgba(0, 0, 0, 0.5);
@@ -275,30 +275,30 @@ div#boxesCont {
 	overflow: hidden;
 }
 
-.cerca .slimScrollDiv  .selectEle span {
+.cerca .selectionList .selectEle span {
 	width: 248px;
 	word-break: break-all;
 	line-height: 15px;
 	padding-bottom: 5px;
 }
 
-.endpList .slimScrollDiv  .selectEle span {
+.endpList .selectionList .selectEle span {
 	width: 188px;
 	word-break: break-all;
 	line-height: 15px;
 	padding-bottom: 5px;
 }
 
-.cerca .slimScrollDiv .selectionList, .endpList .slimScrollDiv .selectionList {
+.cerca .selectionList, .endpList .selectionList {
 	border-top: 0;
 }
 
-.cerca .slimScrollDiv {
+.cerca .selectionList {
 	border-top: 2px solid #e3e3e3;
 	z-index: 9999;
 }
 
-.endpList .slimScrollDiv {
+.endpList .selectionList {
 	border-top: 2px solid #8b8b8b;
 	z-index: 9999;
 }

@@ -2,7 +2,7 @@
  just an example of configuration useful to redirect all the request on the same endpoint
  */
 
-$.jStorage.set('profile', {
+lodliveStore.set('profile', {
 	// parametri di connessione agli endpoint
 	'connection' : {
 		/*matching all the requested URIs*/
@@ -100,17 +100,16 @@ if (!document.lodliveVars) {
 	document.lodliveVars = {};
 }
 
-$.jStorage.set('boxTemplate', '<div class="boxWrapper" id="first"><div class="box sprite"></div></div>');
-$.jStorage.set('relationsLimit', 25);
-$.jStorage.set('doStats', $.jStorage.get('doStats', true));
-$.jStorage.set('doInverse', $.jStorage.get('doAutoExpand', true));
-$.jStorage.set('doAutoExpand', $.jStorage.get('doAutoExpand', true));
-$.jStorage.set('doAutoSameas', $.jStorage.get('doAutoSameas', true));
-$.jStorage.set('doCollectImages', $.jStorage.get('doCollectImages', true));
-$.jStorage.set('doDrawMap', $.jStorage.get('doDrawMap', true));
-$.jStorage.set('showInfoConsole', $.jStorage.get('showInfoConsole', true));
+lodliveStore.set('boxTemplate', '<div class="boxWrapper" id="first" tabindex="0"><div class="box sprite"></div></div>');
+lodliveStore.set('relationsLimit', 25);
+lodliveStore.set('doInverse', lodliveStore.get('doInverse', true));
+lodliveStore.set('doAutoExpand', lodliveStore.get('doAutoExpand', true));
+lodliveStore.set('doAutoSameas', lodliveStore.get('doAutoSameas', true));
+lodliveStore.set('doCollectImages', lodliveStore.get('doCollectImages', true));
+lodliveStore.set('doDrawMap', lodliveStore.get('doDrawMap', true));
+lodliveStore.set('showInfoConsole', lodliveStore.get('showInfoConsole', true));
 
-$.jStorage.set('endpoints', {
+lodliveStore.set('endpoints', {
 	all : 'output=json&format=application/json&timeout=0',
 	arcSparql : 'output=json&jsonp=lodlive',
 	sesame : 'Accept=application/sparql-results%2Bjson'

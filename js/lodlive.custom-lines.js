@@ -28,7 +28,7 @@
 					y : (y1 + y1) / 2
 				});
 			}
-			label = $.trim(label).replace(/\n/g, ', ');
+			label = label.trim().replace(/\n/g, ', ');
 			canvas.drawText({// inserisco l'etichetta
 				fillStyle : "#000",
 				strokeStyle : "#000",

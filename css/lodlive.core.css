@@ -729,14 +729,16 @@ div#msg .separ.inverse {
 	padding: 12px 20px 0 20px
 }
 
-#docInfo .slimScrollDiv {
+#docInfo .docContents {
 	color: #fff;
 	border: 0;
-	background-color:#c7c7c7; 
+	background-color:#c7c7c7;
 }
 
-/*.ellipsis_text {
- max-height: 42px;
- overflow: hidden;
- display: block;
- }*/
+.ellipsis_clamp {
+	display: -webkit-box;
+	-webkit-line-clamp: 3;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}

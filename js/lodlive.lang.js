@@ -1,4 +1,4 @@
-$.jStorage.set('language', {
+lodliveStore.set('language', {
 	it : {
 		restart : 'riavvia',
 		generateInverse : 'calcola relazioni inverse',
@@ -212,4 +212,4 @@ $.jStorage.set('language', {
 	}
 });
 
-$.jStorage.set('selectedLanguage', 'en');
+lodliveStore.set('selectedLanguage', 'en');
