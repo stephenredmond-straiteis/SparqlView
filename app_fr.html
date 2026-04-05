@@ -5,10 +5,10 @@
 		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 
-		<title property="dc:title">LodLive - browsing the Web of Data</title>
+		<title property="dc:title">SparqlView - browsing the Web of Data</title>
 		<link rel="shortcut icon" href="favicon.png" />
 		<link rel="icon" type="image/png" href="favicon.png" />
-		<meta property="og:image" content="https://lodlive.it/img/logoLodLive.jpg" />
+		<meta property="og:image" content="img/logoLodLive.jpg" />
 
 
 		<link property="dc:creator" href="http://purl.org/net/foaf:Person/diego-valerio-camarda" />
@@ -20,8 +20,8 @@
 
 		<link property="cc:licence" href="https://www.opensource.org/licenses/mit-license.php" />
 
-		<meta property="og:title" content="LodLive - browsing the Web of Data" />
-		<meta property="og:description" content="LodLive &egrave; un progetto sperimentale nato per divulgare la filosofia dei linked open data e per creare uno strumento in grado di associare le potenzialità di un browser RDF all'efficacia della rappresentazione a grafo proponendosi come primo navigatore di risorse RDF basato unicamente su endpoint SPARQL." />
+		<meta property="og:title" content="SparqlView - browsing the Web of Data" />
+		<meta property="og:description" content="SparqlView est un explorateur visuel de graphes RDF qui permet de naviguer dans les ressources de donn&eacute;es li&eacute;es via des endpoints SPARQL." />
 
 		<meta property="dcterms:created" content="2012-04-25T13:00:00" />
 		<meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
@@ -78,7 +78,7 @@
 	<body>
 		<div id="lang-en">
 			<div id="lang" role="navigation" aria-label="Language selection">
-				<a href="https://lodlive.it" title="versione italiana">IT</a> / <a href="https://en.lodlive.it" title="english version">EN</a> / <a href="https://fr.lodlive.it" title="version française">FR</a> / <a href="https://gl.lodlive.it" title="versión en galego">GL</a>
+				<a href="app_it.html" title="versione italiana">IT</a> / <a href="app_en.html" title="english version">EN</a> / <a href="app_fr.html" title="version française">FR</a> / <a href="app_gl.html" title="versión en galego">GL</a>
 			</div>
 			<div id="nextPage" class="spriteHome paginator" role="button" tabindex="0" aria-label="Next page"></div>
 			<div id="prevPage" class="spriteHome paginator" role="button" tabindex="0" aria-label="Previous page"></div>
@@ -91,21 +91,21 @@
 				<div class="startBoxMainText">
 					<div style="height: 186px;">
 						<p>
-							Le projet LodLive fournit un exemple de l'usage qui peut être fait des standards du web sémantique (RDF, SPARQL) pour parcourir librement les ressources RDF. L'application a pour but de parcourir les données liées à l'aide d'une interface simple et accueillante qui fonctionne avec des techniques d'emploi courant.
+							SparqlView est un explorateur visuel de graphes RDF qui permet de parcourir les ressources de donn&eacute;es li&eacute;es via des endpoints SPARQL, avec une interface simple et accueillante.
 						</p>
 					</div>
 					<p>
-						<a href="https://github.com/dvcama/LodLive" target="_blank">TÉLÉCHARGER LodLive</a>
+						<a href="https://github.com/stephenredmond-straiteis/SparqlView" target="_blank">TÉLÉCHARGER SparqlView</a>
 					</p>
 				</div>
 				<div class="startBoxMainTextPlain">
 					<div>
 						<p>
-							Le principe qui sous-tend LodLive est notre intention de démontrer que les ressources publiées conformément à la norme W3C SPARQL sont faciles à atteindre et à comprendre, avec l'espoir que l'approche LodLive puisse donner envie aux Administrations publiques et aux propriétaires de données à grande échelle d'ajouter leurs ressources au LOD, afin de les partager. Vous pouvez commencer à naviguer en interrogeant le point d'accès (endpoint) d'une ressource spécifique, ou démarrer à partir de l'un des exemples URI déjà fournis.
+							Les ressources publi&eacute;es conform&eacute;ment &agrave; la norme W3C SPARQL sont faciles &agrave; atteindre et &agrave; comprendre. Vous pouvez commencer &agrave; naviguer en interrogeant le point d'acc&egrave;s (endpoint) d'une ressource sp&eacute;cifique, ou d&eacute;marrer &agrave; partir de l'un des exemples URI d&eacute;j&agrave; fournis.
 						</p>
 					</div>
 					<p>
-						<br />LodLive est composé d'un jQuery plug-in (lodlive-core.js), d'une carte de configuration JSON (lodlive-profile.js), d'une page HTML, de quelques images (sprites) et de quelques autres jQuery public plug-ins. C'est aussi simple que cela.<br /><br />
+						SparqlView inclut un endpoint SPARQL int&eacute;gr&eacute; aliment&eacute; par des fichiers Turtle locaux, un &eacute;diteur de requ&ecirc;tes, et ce navigateur visuel de graphes.
 					</p>
 				</div>
 			</div>
@@ -113,58 +113,46 @@
 				<div id="footerContainer">
 					<div class="footerBox segnala">
 						<h2>partagez</h2>
-						<a class="tw spriteHomeEn" href="https://twitter.com/home?status=via+%40LodLive+-+%23lodlive+-+browsing+the+web+of+data" target="_blank" title="condividi su Twitter"></a><a class="fb spriteHomeEn" href="https://www.facebook.com/sharer.php?s=100&amp;p[title]=LodLive+-+browsing+the+web+of+data&amp;p[summary]=LodLive+%C3%A8+un+progetto+sperimentale+nato+per+divulgare+la+filosofia+dei+linked+open+data+e+per+creare+uno+strumento+in+grado+di+associare+le+potenzialità+di+un+browser+RDF+all'efficacia+della+rappresentazione+a+grafo.&amp;p[url]=https://lodlive.it&amp;&amp;p[images][0]=https://lodlive.it/img/logoLodLive.jpg" target="_blank" title="condividi su FaceBook"></a>
-						<br />
-						<br />
-						<h2>suivez</h2>
-						<a class="tw spriteHomeEn" href="https://twitter.com/#!/LodLive" target="_blank" title="segui su Twitter"></a><a class="fb spriteHomeEn" href="https://www.facebook.com/lodlive.browser" target="_blank" title="segui su FaceBook"></a>
+						<a class="tw spriteHomeEn" href="https://twitter.com/home?status=SparqlView+-+browsing+the+web+of+data" target="_blank" title="partager sur Twitter"></a><a class="fb spriteHomeEn" href="https://www.facebook.com/sharer.php?s=100&amp;p[title]=SparqlView+-+browsing+the+web+of+data&amp;p[summary]=SparqlView+est+un+explorateur+visuel+de+graphes+RDF.&amp;p[url]=https://github.com/stephenredmond-straiteis/SparqlView" target="_blank" title="partager sur FaceBook"></a>
 					</div>
 					<div class="footerBox" id="menu">
 						<h2>menu</h2>
 						<ul>
 							<li>
-								<a href="#what">Qu'est-ce que LodLive?</a>
-							</li>
-							<li>
-								<a href="https://blog.lodlive.it">Blog/documentation</a>
+								<a href="#what">Qu'est-ce que SparqlView?</a>
 							</li>
 							<li>
 								<a href="#faq">FAQ</a>
 							</li>
 							<li>
-								<a href="#send">Indiquer un endpoint</a>
-							</li>
-							<li>
 								<a href="#links">Liens utiles</a>
 							</li>
 							<li>
-								<a href="#get">Télécharger</a>
+								<a href="#get">T&eacute;l&eacute;charger</a>
 							</li>
 							<li>
-								<a href="#credits">Crédits et contacts</a>
+								<a href="#credits">Cr&eacute;dits et contacts</a>
 							</li>
 						</ul>
 					</div>
 					<div class="footerBox">
 						<h2>best experienced with</h2>
-						LodLive ne dépend d'aucun composant coté serveur. Pour un bon fonctionnement de l'application, nous vous recommandons d'utiliser un browser de dernière génération.
+						Pour un bon fonctionnement de l'application, nous vous recommandons d'utiliser un navigateur de derni&egrave;re g&eacute;n&eacute;ration.
 						<div class="spriteHomeEn browsers" title="FireFox - Chrome - Safari - Opera"></div>
 					</div>
 					<div class="best">
-						2012, lodlive.it <a href="https://creativecommons.org/licenses/by-sa/2.0/" target="_blank">CC BY-SA</a>, lodlive.js <a href="https://www.opensource.org/licenses/mit-license.php" target="_blank">MIT License</a>
+						2026, straiteis.ie <a href="https://creativecommons.org/licenses/by-sa/2.0/" target="_blank">CC BY-SA</a>, SparqlView <a href="https://www.opensource.org/licenses/mit-license.php" target="_blank">MIT License</a>
 						<div class="license	 spriteHomeEn"></div>
 					</div>
 				</div>
 			</div>
 			<div id="faq" class="hd">
 				<p>
-					<strong>Pendant la navigation dans le graphe des données, comment savoir sur quel point d'accès je me trouve?</strong>
-					Quand vous passer la souris sur la ressource, une fenêtre s'ouvre dans le coin inférieur gauche qui précise certaines caractéristiques, dont le point d'accès de la ressource.
+					<strong>Pendant la navigation dans le graphe des donn&eacute;es, comment savoir sur quel point d’acc&egrave;s je me trouve?</strong>
+					Quand vous passez la souris sur la ressource, une fen&ecirc;tre s’ouvre dans le coin inf&eacute;rieur gauche qui pr&eacute;cise certaines caract&eacute;ristiques, dont le point d’acc&egrave;s de la ressource.
 					<br />
-					<strong>Le système semble se figer quand j'ouvre certaines ressources, et avec IE il ne semble pas vouloir fonctionner.</strong>
-					LodLive utilise pleinement la puissance de l'ordinateur qui y accède, et c'est cela qui nous a permis de développer une application qui n‘a besoin d'aucun composant coté serveur. L'application peut donc être utilisée immédiatement une fois qu'elle a été téléchargée.
-					Nous vous recommandons d'utiliser un navigateur récemment mis à jour, par exemple opéra, Safari ou Google Chrome; FireFox fonctionne également,
-					mais la navigation sera plus lente; par contre, actuellement Internet Explorer ne fonctionne pas avec l'application, car il n'est pas en mesure de gérer certaines des fonctions et caractéristiques particulières  du javascript/html5 utilisé par LodLive.
+					<strong>Le syst&egrave;me semble se figer quand j’ouvre certaines ressources.</strong>
+					SparqlView utilise pleinement la puissance de l’ordinateur. Nous vous recommandons d’utiliser un navigateur r&eacute;cemment mis &agrave; jour, par exemple Chrome, Firefox, Safari ou Opera.
 				</p>
 			</div>
 			<div id="links" class="hd">
@@ -193,40 +181,33 @@
 			</div>
 			<div id="get" class="hd">
 				<p>
-					LodLive est disponible sur GitHub <a href="https://github.com/dvcama/LodLive" target="_blank">https://github.com/dvcama/LodLive</a>
+					SparqlView est disponible sur GitHub <a href="https://github.com/stephenredmond-straiteis/SparqlView" target="_blank">https://github.com/stephenredmond-straiteis/SparqlView</a>
 				</p>
 			</div>
 			<div id="credits" class="hd">
 				<p>
-					<strong>Les personnes qui ont participé à la crèation du projet sont</strong>
+					<strong>&Eacute;quipe de d&eacute;veloppement originale</strong>
 					<br />
-					<span itemscope itemtype="http://data-vocabulary.org/Person"><span itemprop="name">Diego Valerio Camarda</span> (diego@lodlive.it), <span itemprop="name">Silvia Mazzini</span> (silvia@lodlive.it) e <span itemprop="name">Alessandro Antonuccio</span> (ale@lodlive.it)</span></span>
+					<span itemscope itemtype="http://data-vocabulary.org/Person"><span itemprop="name">Diego Valerio Camarda</span> (diego@lodlive.it), <span itemprop="name">Silvia Mazzini</span> (silvia@lodlive.it), et <span itemprop="name">Alessandro Antonuccio</span> (ale@lodlive.it)</span>
 					<br />
 					<br />
-					On doit à Diego le développement de l'app; Silvia a établi le contour général et Alessandro a mis au point la conception de l'interface. Le groupe s'est partagé le travail lors d'échanges quotidiens, et il est difficile de préciser les contours de la participation de chacun dans le cadre de cette collaboration étroite.
+					On doit &agrave; Diego le d&eacute;veloppement de l'app; Silvia a &eacute;tabli le contour g&eacute;n&eacute;ral et Alessandro a mis au point la conception de l'interface.
 					<br /><br />
-					Un grand merci à Pierre Laurent pour la version française du texte!
+					Un grand merci &agrave; Pierre Laurent pour la version fran&ccedil;aise du texte!
 					<br />
 					<br />
-					Pour toutes informations et contacts: info@lodlive.it.
-				</p>
-			</div>
-			<div id="send" class="hd">
-				<p>
-					Il est possible de signaler un endpoint à info@lodlive.it afin que celui-ci puisse être introduit dans l'application et devienne disponible à lodlive.it.
-					<br />
-					Généralement les meilleurs résultats sont obtenus avec des ensembles de données ayant des propriétés owl:sameAs vers d'autres ressources disponibles sur les endpoints SPARQL. Il est important de fournir le plus d'informations possible sur les ressources existantes dans  le point d'accès, ainsi que sur les spécificités du dataset. On peut configurer LodLive de façon spécifique pour représenter de la meilleure façon possible les thèmes sur lesquels il est appelé à naviguer.
+					Pour toutes informations et contacts: info@straiteis.ie.
 				</p>
 			</div>
 			<div id="what" class="hd">
 				<p>
-					LodLive est un projet expérimental qui a été mis en place dans le but de diffuser et de promouvoir la philosophie des linked-open-data et de créer un outil qui puisse être utilisé pour associer les fonctionnalités d'un navigateur RDF à l'efficacité de la représentation graphique de données.
+					SparqlView est un explorateur visuel de graphes RDF, bas&eacute; sur un projet exp&eacute;rimental appel&eacute; 'LodLive' cr&eacute;&eacute; par Diego Valerio Camarda, Silvia Mazzini et Alessandro Antonuccio, mis &agrave; jour par Stephen Redmond de Strait&eacute;is AI.
 					<br />
-					LodLive est le premier navigateur à utiliser les ressources RDF qui soit uniquement basées sur des endpoints SPARQL.
 					<br />
-					LodLive vise à démontrer comment les ressources publiées par les normes et standards du W3C pour le web sémantique peuvent être rendues facilement accessibles et lisibles avec les instruments adéquats.
+					SparqlView permet de naviguer dans les ressources RDF via des endpoints SPARQL, en reliant les ressources de plusieurs endpoints gr&acirc;ce aux capacit&eacute;s d'interconnexion des LOD telles que owl:sameAs.
 					<br />
-					LodLive est en mesure de relier les ressources qui se trouvent dans les endpoints qui y sont configurés, permettant à l'utilisateur de passer d'un endpoint à l' autre en faisant usage des capacités d'interconnexions caractéristiques des LOD.
+					<br />
+					Il comprend un endpoint SPARQL int&eacute;gr&eacute; en lecture seule aliment&eacute; par des fichiers Turtle locaux, un &eacute;diteur de requ&ecirc;tes, et ce navigateur visuel de graphes.
 				</p>
 			</div>
 			<div class="help hd">
@@ -242,7 +223,7 @@
 						Chaque nouvelle ressource qui s'ouvre guidera l'utilisateur vers toutes celles qui s'y rapportent, reliant de façon automatique le nouveau « cercle » à ceux qu'il a déjà ouvert.
 					</p>
 					<p>
-						Chaque fois qu'une propriété owl:sameAs est atteinte en cours de navigation, LodLive se connecte à l'endpoint qui s'y réfère, ce qui permet à l'utilisateur d'atteindre les nouvelles ressources disponibles sans quitter son environnement de navigation.
+						Chaque fois qu'une propri&eacute;t&eacute; owl:sameAs est atteinte en cours de navigation, SparqlView se connecte &agrave; l'endpoint qui s'y r&eacute;f&egrave;re, ce qui permet &agrave; l'utilisateur d'atteindre les nouvelles ressources disponibles sans quitter son environnement de navigation.
 					</p>
 				</div>
 			</div>
